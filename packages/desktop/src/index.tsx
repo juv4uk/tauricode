@@ -373,7 +373,9 @@ const createPlatform = (password: Accessor<string | null>): Platform => {
     },
 
     setWslEnabled: async (enabled) => {
-      await commands.setWslConfig({ enabled })
+  await commands.setWslConfig({ enabled })
+  window.__OPENCODE__ ??= {}
+  window.__OPENCODE__.wsl = enabled
     },
 
     getDefaultServerUrl: async () => {
