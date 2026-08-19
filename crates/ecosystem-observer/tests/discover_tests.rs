@@ -159,13 +159,21 @@ fn pure_rename_without_content_change_is_also_reported() {
 #[test]
 fn non_git_directory_is_reported_failed_not_panicking() {
     let dir = common::TempDir::new("nongit");
-    // deliberately no `git init`
+    // deliberately no `git init`, and not nested inside any other repo
+    // (std::env::temp_dir() is not itself a git working tree) — this is
+    // the "genuinely no repository anywhere in reach" case, distinct from
+    // `nested_non_git_directory_inside_repo_does_not_inherit_parent_state`
+    // below, which is "no repository *at this exact path*, but one exists
+    // above it".
 
     let snap = scan_repository("nongit", &dir.path);
 
     assert_eq!(snap.scan_status, ScanStatus::Failed);
     assert!(snap.git.is_none());
-    assert_eq!(snap.error.as_deref(), Some("not a git repository"));
+    assert_eq!(
+        snap.error.as_deref(),
+        Some("no git repository found at this path or in any ancestor directory")
+    );
 }
 
 #[test]
@@ -177,7 +185,7 @@ fn nonexistent_path_is_reported_failed_not_panicking() {
 
     assert_eq!(snap.scan_status, ScanStatus::Failed);
     assert!(snap.git.is_none());
-    assert!(snap.error.is_some());
+    assert_eq!(snap.error.as_deref(), Some("path does not exist"));
 }
 
 /// A real `ScanStatus::Partial`: the repository is valid (`is_git_repo`
@@ -312,4 +320,204 @@ fn auto_discovers_all_subdirectories_when_repositories_not_specified() {
         .collect();
     names.sort();
     assert_eq!(names, vec!["a-repo", "z-repo"]);
+}
+
+// --- Hardening regressions (repository-identity fix, bare repos, symlinks, timeout) ---
+
+/// The bug this locks in: a plain, non-git subdirectory nested inside a
+/// git working tree used to be reported `ScanStatus::Complete` with the
+/// *parent* repository's branch/HEAD/remotes, because
+/// `rev-parse --is-inside-work-tree` succeeds via git's own upward
+/// directory search. `identify_repository`'s `--show-toplevel`-vs-`path`
+/// identity check closes this.
+#[test]
+fn nested_non_git_directory_inside_repo_does_not_inherit_parent_state() {
+    let parent = common::TempDir::new("nested-parent");
+    common::init_repo(&parent.path);
+    std::fs::write(parent.path.join("a.txt"), "a\n").unwrap();
+    common::commit_all(&parent.path, "init");
+    common::git(
+        &parent.path,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "https://example.invalid/parent.git",
+        ],
+    );
+    let nested = parent.path.join("plain-subdir");
+    std::fs::create_dir_all(&nested).unwrap();
+
+    let snap = scan_repository("plain-subdir", &nested);
+
+    assert_eq!(snap.scan_status, ScanStatus::Failed);
+    assert!(
+        snap.git.is_none(),
+        "must not carry the parent's GitState under the child's name"
+    );
+    let error = snap.error.expect("explicit error, not silent success");
+    assert!(
+        error.contains("not that repository's own root")
+            || error.contains("uninitialized submodule"),
+        "error should explain this is inside-but-not-root, got: {error}"
+    );
+}
+
+/// Same bug, real-world shape: an uninitialized git submodule is exactly
+/// an empty directory nested inside a parent working tree.
+#[test]
+fn uninitialized_submodule_does_not_inherit_parent_state() {
+    let target = common::TempDir::new("submodule-target");
+    common::init_repo(&target.path);
+    std::fs::write(target.path.join("s.txt"), "s\n").unwrap();
+    common::commit_all(&target.path, "init");
+
+    let superproject = common::TempDir::new("superproject");
+    common::init_repo(&superproject.path);
+    common::submodule_add(&superproject.path, target.path.to_str().unwrap(), "sub");
+    common::commit_all(&superproject.path, "add submodule");
+
+    let clone_root = common::TempDir::new("superproject-clone-root");
+    let clone_path = clone_root.path.join("clone");
+    common::clone_repo(&superproject.path, &clone_path);
+    // deliberately no `git submodule update --init` — `clone_path/sub` is
+    // now an empty directory, the uninitialized-submodule shape.
+
+    let sub_path = clone_path.join("sub");
+    assert!(
+        sub_path.is_dir(),
+        "submodule dir should exist, just empty/uninitialized"
+    );
+
+    let snap = scan_repository("sub", &sub_path);
+
+    assert_eq!(snap.scan_status, ScanStatus::Failed);
+    assert!(snap.git.is_none());
+    // must NOT be the superproject's own head/branch/remote:
+    let superproject_snap = scan_repository("superproject", &clone_path);
+    assert_eq!(superproject_snap.scan_status, ScanStatus::Complete);
+    assert_ne!(
+        snap.error, superproject_snap.error,
+        "sanity: these two calls must genuinely differ, not coincidentally match"
+    );
+}
+
+/// The identity check must still accept a *linked worktree* — its own
+/// `--show-toplevel` equals its own path, even though its git-dir lives
+/// under the main repository's `.git/worktrees/...`.
+#[test]
+fn linked_worktree_is_still_accepted_as_complete() {
+    let main_repo = common::TempDir::new("worktree-main");
+    common::init_repo(&main_repo.path);
+    std::fs::write(main_repo.path.join("a.txt"), "a\n").unwrap();
+    common::commit_all(&main_repo.path, "init");
+    common::git(&main_repo.path, &["branch", "feature"]);
+
+    let worktree_root = common::TempDir::new("worktree-copy-root");
+    let worktree_path = worktree_root.path.join("copy");
+    common::worktree_add(&main_repo.path, &worktree_path, "feature");
+
+    let snap = scan_repository("worktree-copy", &worktree_path);
+
+    assert_eq!(snap.scan_status, ScanStatus::Complete);
+    let git = snap.git.expect("git state present");
+    assert_eq!(git.branch.as_deref(), Some("feature"));
+    assert!(!git.is_detached);
+}
+
+/// A bare repository IS a git repository — the error must say so
+/// truthfully, never "not a git repository".
+#[test]
+fn bare_repository_is_classified_truthfully_not_as_missing() {
+    let dir = common::TempDir::new("bare");
+    common::init_bare_repo(&dir.path);
+
+    let snap = scan_repository("bare", &dir.path);
+
+    assert_eq!(snap.scan_status, ScanStatus::Failed);
+    assert!(snap.git.is_none());
+    let error = snap.error.expect("explicit error");
+    assert!(
+        error.contains("bare repository"),
+        "error should name it as bare, got: {error}"
+    );
+    assert!(
+        !error.contains("not a git repository"),
+        "must not claim a bare repo isn't a repo at all, got: {error}"
+    );
+}
+
+/// A broken symlink in the auto-discovered root must not silently vanish
+/// from the snapshot.
+#[test]
+fn broken_symlink_in_auto_discovery_is_visible_not_hidden() {
+    let root = common::TempDir::new("symlink-root");
+    let real_repo = root.path.join("real-repo");
+    std::fs::create_dir_all(&real_repo).unwrap();
+    common::init_repo(&real_repo);
+    std::fs::write(real_repo.join("a.txt"), "a\n").unwrap();
+    common::commit_all(&real_repo, "init");
+
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(
+        root.path.join("does-not-exist"),
+        root.path.join("broken-link"),
+    )
+    .unwrap();
+
+    let snapshot = discover_ecosystem(DiscoverInput {
+        root: root.path.clone(),
+        repositories: None,
+    });
+
+    let names: Vec<&str> = snapshot
+        .repositories
+        .iter()
+        .map(|r| r.name.as_str())
+        .collect();
+    assert!(
+        names.contains(&"broken-link"),
+        "broken symlink must appear in the snapshot, got entries: {names:?}"
+    );
+    let link_entry = snapshot
+        .repositories
+        .iter()
+        .find(|r| r.name == "broken-link")
+        .unwrap();
+    assert_eq!(link_entry.scan_status, ScanStatus::Failed);
+    assert!(link_entry.error.is_some());
+}
+
+/// The real end-to-end timeout regression: a repository whose
+/// `.git/config` hangs (via `include.path` pointing at an unread FIFO —
+/// see `common::make_repo_with_hanging_config`) must produce `Failed`
+/// with an error mentioning the timeout, not block forever. This test
+/// genuinely takes ~20s (the production timeout) — that's the honest
+/// price of testing this specific property for real rather than mocking
+/// it away; see `git_read::tests::run_with_timeout_kills_a_hung_process_instead_of_blocking`
+/// for a fast (sub-second) proof of the underlying mechanism using a
+/// generic `sleep` instead of a real git hang, if a quick sanity check is
+/// what's needed instead.
+#[test]
+fn timed_out_git_probe_gives_failed_not_a_hang() {
+    let repo = common::TempDir::new("hanging-config");
+    common::make_repo_with_hanging_config(&repo.path);
+
+    let started = std::time::Instant::now();
+    let snap = scan_repository("hanging-config", &repo.path);
+    let elapsed = started.elapsed();
+
+    assert_eq!(snap.scan_status, ScanStatus::Failed);
+    let error = snap.error.expect("explicit error, not a hang");
+    assert!(
+        error.contains("timed out"),
+        "error should mention the timeout, got: {error}"
+    );
+    // generous upper bound: the 20s production timeout plus real slack,
+    // proving this returned because of the timeout firing, not because
+    // it happened to hang forever and the test harness itself gave up.
+    assert!(
+        elapsed < std::time::Duration::from_secs(30),
+        "took {elapsed:?}, expected to return shortly after the ~20s timeout"
+    );
 }

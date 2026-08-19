@@ -1,6 +1,21 @@
 //! Data model for Slice 1, per `ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER`.
 //! `EcosystemSnapshot`/`RepositorySnapshot`/`GitState`/`ScanMetadata` only —
 //! no Guix, tasks, or evidence fields on this slice.
+//!
+//! **Known technical debt, recorded deliberately rather than fixed here:**
+//! `GitState`'s per-probe fields (`is_dirty: bool`, `changed_paths:
+//! Vec<String>`, `remotes: Vec<RemoteInfo>`, `branch: Option<String>`) are
+//! plain, ordinary-looking types. During `ScanStatus::Partial`, a field
+//! whose probe is listed in `unavailable` holds a placeholder (`false`,
+//! empty, or `None`), not a fact — but nothing at the type level stops a
+//! consumer from reading e.g. `git.is_dirty` as "definitely clean" without
+//! first checking whether `"dirty"` is in `git.unavailable`. This was
+//! flagged in adversarial review of the first commit and deliberately left
+//! as-is per explicit instruction not to change these field shapes in
+//! this hardening pass. A future slice should consider a typed wrapper
+//! (e.g. an enum per field distinguishing "known" from "probe failed")
+//! instead of bare `bool`/`Vec` — not done now to avoid an API change
+//! outside this hardening's authorized scope.
 
 /// `Complete`: the repository is a git repo and all four read-only probes
 /// (branch, head SHA, dirty-state, remotes) succeeded.

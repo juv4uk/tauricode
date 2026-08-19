@@ -3,7 +3,7 @@
 //! failing never removes another repo's data), per
 //! `ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER`.
 
-use crate::git_read;
+use crate::git_read::{self, RepoKind};
 use crate::snapshot::{
     EcosystemSnapshot, GitState, ProbeFailure, RepositorySnapshot, ScanMetadata, ScanStatus,
 };
@@ -44,27 +44,87 @@ pub fn discover_ecosystem(input: DiscoverInput) -> EcosystemSnapshot {
 /// degrades to `ScanStatus::Failed` with an `error` string instead, so one
 /// repository's problem never removes the rest of the snapshot's data.
 ///
-/// The four read-only probes (branch, head SHA, dirty-state, remotes) are
-/// evaluated independently:
-/// - not a git repository at all → `Failed`, `git: None` (nothing to read).
-/// - git repository, all four probes succeed → `Complete`, full `GitState`.
-/// - git repository, every probe fails → `Failed`, `git: None` (repository
-///   state could not be obtained at all, even though the path is a git repo).
-/// - git repository, some probes succeed and some fail → `Partial`,
-///   `GitState` holds the facts that were read plus an `unavailable` list
-///   naming which probes failed and why. Nothing is silently defaulted
-///   without that failure being recorded.
+/// Repository identity is checked first via
+/// [`git_read::identify_repository`], which distinguishes three cases
+/// (this is a hardening fix — Slice 1's first commit used a check that
+/// silently reported an *ancestor* repository's state for any nested
+/// non-git directory; see that function's doc comment):
+/// - not a repository root at this exact path → `Failed`, `git: None`.
+///   This covers both "no git repository anywhere in reach" and "inside a
+///   git working tree, but not that repository's own root" (an
+///   uninitialized submodule, a plain subdirectory, ...) — both produce an
+///   explicit, distinct `error` string, never inherited data.
+/// - a valid bare repository → `Failed`, `git: None`, with an `error` that
+///   says so explicitly (never "not a git repository" — a bare repo *is*
+///   one). Slice 1's `GitState` models working-tree fields (dirty-state,
+///   checked-out branch) that don't apply to a bare repository; supporting
+///   bare repositories properly is future scope, not silently wrong data.
+/// - a working tree (ordinary repository or linked worktree — both have
+///   their own `--show-toplevel`) → proceed to the four read-only probes.
+///
+/// Within a working tree, the four probes (branch, head SHA, dirty-state,
+/// remotes) are evaluated independently:
+/// - all four succeed → `Complete`, full `GitState`.
+/// - every probe fails (including via timeout — see
+///   `git_read::run_with_timeout`) → `Failed`, `git: None` (repository
+///   state could not be obtained at all, even though it is a repository).
+/// - some succeed and some fail → `Partial`, `GitState` holds the facts
+///   that were read plus an `unavailable` list naming which probes failed
+///   and why. Nothing is silently defaulted without that failure being
+///   recorded.
 pub fn scan_repository(name: &str, path: &Path) -> RepositorySnapshot {
     let path_str = path.display().to_string();
 
-    if !git_read::is_git_repo(path) {
+    if !path.exists() {
+        let reason = if path.symlink_metadata().is_ok() {
+            "broken symlink (target does not exist)"
+        } else {
+            "path does not exist"
+        };
         return RepositorySnapshot {
             name: name.to_string(),
             path: path_str,
             scan_status: ScanStatus::Failed,
             git: None,
-            error: Some("not a git repository".to_string()),
+            error: Some(reason.to_string()),
         };
+    }
+
+    match git_read::identify_repository(path) {
+        Ok(RepoKind::NotARepository { reason }) => {
+            return RepositorySnapshot {
+                name: name.to_string(),
+                path: path_str,
+                scan_status: ScanStatus::Failed,
+                git: None,
+                error: Some(reason.to_string()),
+            };
+        }
+        Ok(RepoKind::Bare) => {
+            return RepositorySnapshot {
+                name: name.to_string(),
+                path: path_str,
+                scan_status: ScanStatus::Failed,
+                git: None,
+                error: Some(
+                    "bare repository (no working tree) — this IS a git repository, \
+                     but Slice 1's GitState models working-tree fields (checked-out \
+                     branch, dirty-state) that don't apply to it; unsupported here, \
+                     not invalid or missing"
+                        .to_string(),
+                ),
+            };
+        }
+        Ok(RepoKind::WorkingTree) => {} // fall through to the four probes below
+        Err(reason) => {
+            return RepositorySnapshot {
+                name: name.to_string(),
+                path: path_str,
+                scan_status: ScanStatus::Failed,
+                git: None,
+                error: Some(format!("failed to determine repository kind: {reason}")),
+            };
+        }
     }
 
     let branch_result = git_read::read_branch(path);
@@ -176,20 +236,30 @@ fn resolve_targets(input: &DiscoverInput) -> Vec<(String, PathBuf)> {
     }
 }
 
-/// Every subdirectory of `root`, git or not — non-git directories are not
-/// filtered out here; they surface later as `ScanStatus::Failed` entries
-/// with an explicit `error`, per Stage 1's "show unknown/failure, don't
-/// hide it" principle, rather than being silently excluded from the
-/// snapshot.
+/// Every subdirectory of `root`, git or not, plus every symlink (even a
+/// broken one) — non-git directories and broken symlinks are not filtered
+/// out here; they surface later as `ScanStatus::Failed` entries with an
+/// explicit `error`, per Stage 1's "show unknown/failure, don't hide it"
+/// principle, rather than being silently excluded from the snapshot.
+///
+/// This is a hardening fix: `path.is_dir()` alone follows symlinks and
+/// returns `false` for a broken one exactly the same as for an ordinary
+/// non-directory file, which meant a broken symlink used to vanish from
+/// the snapshot entirely — the one case this function's own doc comment
+/// already claimed didn't happen. `DirEntry::file_type()` (which does
+/// *not* follow symlinks) is used to tell "broken symlink" apart from
+/// "ordinary file", so only the former is still included.
 fn list_subdirectories(root: &Path) -> Vec<(String, PathBuf)> {
     let mut result = Vec::new();
     if let Ok(entries) = std::fs::read_dir(root) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_dir() {
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    result.push((name.to_string(), path));
-                }
+            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                continue;
+            };
+            let is_symlink = entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false);
+            if path.is_dir() || is_symlink {
+                result.push((name.to_string(), path));
             }
         }
     }
