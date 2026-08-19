@@ -1,0 +1,10 @@
+[package]
+name = "ecosystem-observer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Read-only observer core for the my-lisp ecosystem (Slice 1: repository/git discovery only)."
+
+[dependencies]
+
+[dev-dependencies]
