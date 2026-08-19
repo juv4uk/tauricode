@@ -4,11 +4,16 @@
 //! `ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER`.
 
 use crate::git_read::{self, RepoKind};
+use crate::identity_contract;
+use crate::process_observe::{self, OsProcess};
 use crate::snapshot::{
-    EcosystemSnapshot, GitState, ProbeFailure, RepositorySnapshot, ScanMetadata, ScanStatus,
+    AgentProcess, EcosystemSnapshot, GitState, IdentityStatus, OsObservedFacts, ProbeFailure,
+    RepositorySnapshot, ScanMetadata, ScanStatus, SelfReportedIdentity,
 };
 use crate::time_util::iso8601_now;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 pub struct DiscoverInput {
     /// No default baked into the crate — the caller (this environment's
@@ -17,6 +22,12 @@ pub struct DiscoverInput {
     /// `None` = auto-discover every subdirectory of `root`; `Some` scans
     /// exactly the named subdirectories, in the given order.
     pub repositories: Option<Vec<String>>,
+    /// `None` = use `identity_contract::default_base_dir()` (the real
+    /// `$XDG_RUNTIME_DIR/ecosystem-agents` location). `Some(path)` reads
+    /// self-reported identity records from exactly that directory instead
+    /// — for tests, so they never depend on (or race on) a real shared
+    /// runtime directory; production callers should leave this `None`.
+    pub identity_base_dir: Option<PathBuf>,
 }
 
 pub fn discover_ecosystem(input: DiscoverInput) -> EcosystemSnapshot {
@@ -24,10 +35,15 @@ pub fn discover_ecosystem(input: DiscoverInput) -> EcosystemSnapshot {
     let started_at = iso8601_now();
 
     let targets = resolve_targets(&input);
-    let repositories = targets
+    let repositories: Vec<RepositorySnapshot> = targets
         .into_iter()
         .map(|(name, path)| scan_repository(&name, &path))
         .collect();
+
+    let identity_base_dir = input
+        .identity_base_dir
+        .unwrap_or_else(identity_contract::default_base_dir);
+    let local_processes = gather_local_processes(&repositories, &identity_base_dir);
 
     let finished_at = iso8601_now();
     EcosystemSnapshot {
@@ -37,7 +53,98 @@ pub fn discover_ecosystem(input: DiscoverInput) -> EcosystemSnapshot {
             finished_at,
         },
         repositories,
+        local_processes,
     }
+}
+
+/// Slice 2, two passes over two different sources of truth — never
+/// merged into one loop, because they answer different questions:
+///
+/// 1. Live OS processes (from `process_observe::list_processes()`) that
+///    are relevant — cwd inside one of this scan's repositories, or a
+///    self-reported record exists for that PID — get `os_observed:
+///    Some(...)`, correlated against any self-reported record.
+/// 2. Self-reported PIDs that have **no** matching live OS process at
+///    all get `os_observed: None`, `identity_status: Orphaned` — the
+///    identity file is real, but nothing backs its PID claim right now.
+///    This is what makes an orphaned file for a dead process visible
+///    instead of silently dropped (found in adversarial review of the
+///    first version of this function, which only ever did pass 1).
+fn gather_local_processes(
+    repositories: &[RepositorySnapshot],
+    identity_base_dir: &Path,
+) -> Vec<AgentProcess> {
+    let known_pids = identity_contract::known_pids(identity_base_dir);
+    let now = SystemTime::now();
+    let live_processes = process_observe::list_processes();
+    let live_pids: HashSet<u32> = live_processes.iter().map(|p| p.pid).collect();
+
+    let mut result: Vec<AgentProcess> = live_processes
+        .into_iter()
+        .filter_map(|process| {
+            build_live_agent_process(process, repositories, &known_pids, identity_base_dir, now)
+        })
+        .collect();
+
+    for pid in known_pids {
+        if live_pids.contains(&pid) {
+            continue; // already handled in pass 1, with real correlation
+        }
+        result.push(AgentProcess {
+            pid,
+            os_observed: None,
+            identity_status: IdentityStatus::Orphaned,
+            identity: SelfReportedIdentity::default(),
+        });
+    }
+
+    result
+}
+
+fn build_live_agent_process(
+    process: OsProcess,
+    repositories: &[RepositorySnapshot],
+    known_pids: &HashSet<u32>,
+    base_dir: &Path,
+    now: SystemTime,
+) -> Option<AgentProcess> {
+    let repo_association = process
+        .cwd
+        .as_deref()
+        .and_then(|cwd| find_repo_association(cwd, repositories));
+
+    let is_relevant = repo_association.is_some() || known_pids.contains(&process.pid);
+    if !is_relevant {
+        return None;
+    }
+
+    let (identity_status, identity) = identity_contract::correlate(&process, base_dir, now);
+
+    Some(AgentProcess {
+        pid: process.pid,
+        os_observed: Some(OsObservedFacts {
+            command: process.command,
+            cwd: process.cwd,
+            started_at_observed: process.started_at,
+            repo_association,
+        }),
+        identity_status,
+        identity,
+    })
+}
+
+/// A process's `cwd` is associated with the first repository (in scan
+/// order) whose path is a prefix of it. Plain path-prefix comparison, not
+/// canonicalized on either side — matches how this crate's own callers
+/// have used it all session (direct, non-symlinked absolute paths); a
+/// symlinked repo path could defeat this, a known, undocumented-until-now
+/// limitation, not fixed here.
+fn find_repo_association(cwd: &str, repositories: &[RepositorySnapshot]) -> Option<String> {
+    let cwd_path = Path::new(cwd);
+    repositories
+        .iter()
+        .find(|repo| cwd_path.starts_with(&repo.path))
+        .map(|repo| repo.name.clone())
 }
 
 /// Scans one repository. Never panics on a bad/missing/non-git path —

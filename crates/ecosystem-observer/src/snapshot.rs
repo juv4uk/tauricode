@@ -104,8 +104,104 @@ pub struct ScanMetadata {
     pub finished_at: String,
 }
 
+/// Slice 2 (`ECO-DECISION` follow-up, "Local Runtime Observation + Agent
+/// Identity Contract"): freshness/state of a self-reported identity
+/// record, evaluated by correlating it against the OS-observed process it
+/// claims to describe. This is a *separate axis* from provenance
+/// (OS-observed vs. self-reported) — it is not itself a provenance value.
+///
+/// **This is a correlation/liveness status, not a trust/authenticity
+/// status.** `Fresh` means "a record exists whose claimed PID and start
+/// time line up with a real, currently-running process, and it was
+/// updated recently" — it does *not* mean "this record was written by
+/// the process it claims to describe" or "this record's content is
+/// true". Nothing in this crate verifies *who* wrote a self-reported
+/// file, only *whether its PID claim is currently consistent with
+/// reality*. See `identity_contract`'s module doc for the known gap this
+/// leaves open (the runtime directory may be group-writable).
+///
+/// - `Fresh`: a self-reported record exists, its PID correlates with a
+///   real running OS-observed process (via `process_start_token`, or the
+///   `started_at` tolerance fallback — see `identity_contract`), and its
+///   `updated_at` is within the staleness threshold.
+/// - `Stale`: correlates correctly, but `updated_at` is older than the
+///   threshold — the process is real and is who it claims to be, but may
+///   not have reported in for a while.
+/// - `Orphaned`: a self-reported record's PID does not correlate with the
+///   OS-observed process — either that PID belongs to a *different*
+///   process now (PID reuse, caught by `process_start_token`/tolerance
+///   mismatch) or, when reached via that path, no such process exists at
+///   all. Its identity fields are never surfaced as this process's own.
+/// - `NotFound`: the OS-observed process is real (and relevant — see
+///   `AgentProcess`) but has no self-reported record at all. Not an error.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IdentityStatus {
+    Fresh,
+    Stale,
+    Orphaned,
+    NotFound,
+}
+
+/// Everything in this struct is provenance: self-reported. None of it is
+/// verified against anything except the correlation that produced
+/// `AgentProcess::identity_status` in the first place — treat every field
+/// as a claim, per the ecosystem's own doctrine that an unverified report
+/// is not evidence.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SelfReportedIdentity {
+    pub model: Option<String>,
+    pub role: Option<String>,
+    pub repository_identity: Option<String>,
+    pub instance: Option<String>,
+    pub task: Option<String>,
+    /// Deliberately not named `capabilities`. This is what the agent
+    /// *claims* it can do, not a grant or a fact about what it *can*
+    /// actually do — actual/effective capabilities are a future concern
+    /// meant to be derived from structural boundaries (Linux user,
+    /// worktree, Guix environment, role policy), never from this field.
+    pub declared_capabilities: Option<Vec<String>>,
+}
+
+/// provenance: OS-observed, as a single block rather than flat fields on
+/// `AgentProcess` — so "no OS process exists for this PID right now" can
+/// be represented as `None` instead of inventing empty/placeholder
+/// command/cwd/start-time facts for a process that isn't there. This is
+/// what makes the orphaned-identity-file-for-a-dead-PID case (see
+/// `IdentityStatus::Orphaned`) representable without faking anything.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OsObservedFacts {
+    pub command: String,
+    pub cwd: Option<String>,
+    pub started_at_observed: Option<String>,
+    /// Name of the repository (from this same scan's `repositories`)
+    /// whose path contains this process's `cwd`, if any.
+    pub repo_association: Option<String>,
+}
+
+/// One process relevant to the ecosystem — either a live OS process whose
+/// cwd falls inside a repository from this same scan or which has a
+/// self-reported identity record, or a self-reported identity record
+/// whose claimed PID no longer corresponds to any live process at all
+/// (`os_observed: None`, `identity_status: Orphaned`). Irrelevant OS
+/// processes (the vast majority on any real machine) are never included
+/// here at all; this is not a full process list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AgentProcess {
+    pub pid: u32,
+    /// `None` means exactly one thing: no OS process with this `pid`
+    /// exists right now. Never populated with guessed/default values.
+    pub os_observed: Option<OsObservedFacts>,
+
+    // provenance: self-reported, gated by identity_status.
+    pub identity_status: IdentityStatus,
+    /// All fields `None` when `identity_status` is `Orphaned` or
+    /// `NotFound` — there is nothing trustworthy to report in either case.
+    pub identity: SelfReportedIdentity,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EcosystemSnapshot {
     pub scan: ScanMetadata,
     pub repositories: Vec<RepositorySnapshot>,
+    pub local_processes: Vec<AgentProcess>,
 }

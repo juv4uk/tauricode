@@ -274,6 +274,7 @@ fn one_repository_failing_does_not_affect_the_others() {
             "repo-c".to_string(),
             "repo-d".to_string(),
         ]),
+        identity_base_dir: None,
     });
 
     assert_eq!(snapshot.repositories.len(), 4);
@@ -311,6 +312,7 @@ fn auto_discovers_all_subdirectories_when_repositories_not_specified() {
     let snapshot = discover_ecosystem(DiscoverInput {
         root: root.path.clone(),
         repositories: None,
+        identity_base_dir: None,
     });
 
     let mut names: Vec<&str> = snapshot
@@ -468,6 +470,7 @@ fn broken_symlink_in_auto_discovery_is_visible_not_hidden() {
     let snapshot = discover_ecosystem(DiscoverInput {
         root: root.path.clone(),
         repositories: None,
+        identity_base_dir: None,
     });
 
     let names: Vec<&str> = snapshot

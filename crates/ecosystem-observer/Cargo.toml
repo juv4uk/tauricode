@@ -3,8 +3,17 @@ name = "ecosystem-observer"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Read-only observer core for the my-lisp ecosystem (Slice 1: repository/git discovery only)."
+description = "Read-only observer core for the my-lisp ecosystem (Slice 1: repository/git discovery; Slice 2: local runtime + self-reported agent identity)."
 
 [dependencies]
+# Slice 2 only: the self-reported identity contract (docs/identity-contract-v1
+# below) is arbitrary JSON written by external, unaudited agent runtimes, not
+# by this crate itself — unlike the S-expr convention used elsewhere in the
+# ecosystem, a robust, well-tested JSON parser is worth a real dependency
+# here rather than hand-rolling escape/unicode handling for untrusted input.
+# This is a deliberate, disclosed departure from Slice 1's zero-deps
+# convention (matched by my-lisp/cml's own crates), not an oversight.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]

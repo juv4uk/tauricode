@@ -10,6 +10,13 @@ pub fn iso8601_now() -> String {
     format_iso8601(dur.as_secs() as i64, dur.subsec_millis())
 }
 
+/// Same formatting, for a caller (Slice 2's `process_observe`) that
+/// already has a Unix-seconds value from elsewhere (`/proc/stat`'s
+/// `btime` + `/proc/<pid>/stat`'s `starttime`) rather than "now".
+pub fn iso8601_from_unix_seconds(unix_secs: i64) -> String {
+    format_iso8601(unix_secs, 0)
+}
+
 fn format_iso8601(unix_secs: i64, millis: u32) -> String {
     let days = unix_secs.div_euclid(86400);
     let secs_of_day = unix_secs.rem_euclid(86400);
