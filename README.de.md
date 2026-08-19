@@ -1,129 +1,208 @@
 <p align="center">
-  <a href="https://opencode.ai">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode logo">
-    </picture>
-  </a>
-</p>
-<p align="center">Der Open-Source KI-Coding-Agent.</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
-  <a href="https://github.com/anomalyco/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/opencode/publish.yml?style=flat-square&branch=dev" /></a>
-</p>
-
-<p align="center">
   <a href="README.md">English</a> |
-  <a href="README.zh.md">简体中文</a> |
-  <a href="README.zht.md">繁體中文</a> |
-  <a href="README.ko.md">한국어</a> |
-  <a href="README.de.md">Deutsch</a> |
-  <a href="README.es.md">Español</a> |
-  <a href="README.fr.md">Français</a> |
-  <a href="README.it.md">Italiano</a> |
-  <a href="README.da.md">Dansk</a> |
-  <a href="README.ja.md">日本語</a> |
-  <a href="README.pl.md">Polski</a> |
-  <a href="README.ru.md">Русский</a> |
-  <a href="README.bs.md">Bosanski</a> |
-  <a href="README.ar.md">العربية</a> |
-  <a href="README.no.md">Norsk</a> |
-  <a href="README.br.md">Português (Brasil)</a> |
-  <a href="README.th.md">ไทย</a> |
-  <a href="README.tr.md">Türkçe</a> |
   <a href="README.uk.md">Українська</a> |
-  <a href="README.bn.md">বাংলা</a> |
-  <a href="README.gr.md">Ελληνικά</a> |
-  <a href="README.vi.md">Tiếng Việt</a>
+  <a href="README.de.md">Deutsch</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+# Tauricode
 
----
+**Erst sehen. Dann beweisen. Zuletzt handeln.**
 
-### Installation
+Tauri-basierte Agent-Workstation für das my-lisp-Ökosystem.
 
-```bash
-# YOLO
-curl -fsSL https://opencode.ai/install | bash
+Tauricode ist ein eigenständiges Projekt für reproduzierbare,
+beobachtbare und kontrollierbare Ausführungsumgebungen für
+KI-Agenten.
 
-# Paketmanager
-npm i -g opencode-ai@latest        # oder bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS und Linux (empfohlen, immer aktuell)
-brew install opencode              # macOS und Linux (offizielle Brew-Formula, seltener aktualisiert)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # jedes Betriebssystem
-nix run nixpkgs#opencode           # oder github:anomalyco/opencode für den neuesten dev-Branch
-```
+Es kombiniert:
 
-> [!TIP]
-> Entferne Versionen älter als 0.1.x vor der Installation.
+- Tauri 2 + Rust Desktop-Backend
+- SolidJS Frontend
+- Guix reproduzierbare Umgebungen
+- WSL/Linux Agent-Ausführung
+- Beobachtung von Repositories / Contracts / Tasks / Evidence
+- austauschbare Agent-Runtimes
 
-### Desktop-App (BETA)
+## Was heute existiert
 
-OpenCode ist auch als Desktop-Anwendung verfügbar. Lade sie direkt von der [Releases-Seite](https://github.com/anomalyco/opencode/releases) oder [opencode.ai/download](https://opencode.ai/download) herunter.
+- `ecosystem-observer` (Rust-Crate, `crates/ecosystem-observer/`):
+  schreibgeschützte Git-Repository-Snapshots — Branch, HEAD,
+  Dirty-Status, Remotes; Beobachtungssemantik `Complete` / `Partial` /
+  `Failed`; Härtung der Repository-Identifikation (Worktree / Bare /
+  Submodule werden korrekt unterschieden, nicht stillschweigend vom
+  übergeordneten Repo übernommen); Timeout-Schutz pro Probe gegen
+  hängende git-Prozesse. 22 Tests gegen echte git-Fixtures.
 
-| Plattform             | Download                           |
-| --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
-| Linux                 | `.deb`, `.rpm` oder AppImage       |
+Das ist die gesamte aktuelle Implementierung. Alles unterhalb dieser
+Zeile ist Zielarchitektur, kein ausgeliefertes Verhalten.
 
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
+## Was wir gerade bauen
 
-#### Installationsverzeichnis
+- Eine Tauri-2-Desktop-Shell (`packages/desktop-tauri/`, noch nicht
+  angelegt), die parallel zum — nicht anstelle des — bestehenden,
+  von OpenCode geerbten Electron-Desktops entwickelt wird, bis eine
+  ausreichende Feature-Parität nachgewiesen ist.
+- Agent-Runtime-Steuerung (Start, Lebenszyklus, Berechtigungen) —
+  geplant, nicht implementiert.
+- Beobachtung von Contracts/Tasks/Evidence/Guix über den Git-Status
+  hinaus — geplant, nicht implementiert.
 
-Das Installationsskript beachtet die folgende Prioritätsreihenfolge für den Installationspfad:
+## Architektur
 
-1. `$OPENCODE_INSTALL_DIR` - Benutzerdefiniertes Installationsverzeichnis
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification-konformer Pfad
-3. `$HOME/bin` - Standard-Binärverzeichnis des Users (falls vorhanden oder erstellbar)
-4. `$HOME/.opencode/bin` - Standard-Fallback
+Tauricode besitzt die Architektur der Workstation und der Control
+Plane.
 
-```bash
-# Beispiele
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
-```
+    SolidJS UI
+        ↓
+    Tauri 2
+        ↓
+    Rust Backend
+        ↓
+    ecosystem-observer
+        ├── Git
+        ├── contracts
+        ├── tasks
+        ├── evidence
+        ├── Guix
+        └── runtime state
 
-### Agents
+Agent-Runtimes sind Adapter:
 
-OpenCode enthält zwei eingebaute Agents, zwischen denen du mit der `Tab`-Taste wechseln kannst.
+    Tauricode
+        ├── OpenCode-Adapter
+        ├── Claude-Adapter
+        └── zukünftige Runtimes
 
-- **build** - Standard-Agent mit vollem Zugriff für Entwicklungsarbeit
-- **plan** - Nur-Lese-Agent für Analyse und Code-Exploration
-  - Verweigert Datei-Edits standardmäßig
-  - Fragt vor dem Ausführen von bash-Befehlen nach
-  - Ideal zum Erkunden unbekannter Codebases oder zum Planen von Änderungen
+## Designprinzipien
 
-Außerdem ist ein **general**-Subagent für komplexe Suchen und mehrstufige Aufgaben enthalten.
-Dieser wird intern genutzt und kann in Nachrichten mit `@general` aufgerufen werden.
+### Erst beobachten, dann handeln
 
-Mehr dazu unter [Agents](https://opencode.ai/docs/agents).
+Tauricode stellt zuerst fest, was über die Umgebung tatsächlich
+zutrifft, bevor einem Agenten erlaubt wird, darauf basierend zu
+handeln.
 
-### Dokumentation
+Unbekannter Zustand muss als unbekannt sichtbar bleiben.
 
-Mehr Infos zur Konfiguration von OpenCode findest du in unseren [**Docs**](https://opencode.ai/docs).
+### Evidence statt Annahmen
 
-### Beitragen
+Repository-Zustand, Contracts, Tasks und Ausführungsergebnisse
+müssen auf konkrete Quellen und reproduzierbare Umgebungen
+zurückführbar sein.
 
-Wenn du zu OpenCode beitragen möchtest, lies bitte unsere [Contributing Docs](./CONTRIBUTING.md), bevor du einen Pull Request einreichst.
+### Reproduzierbare Ausführung
 
-### Auf OpenCode aufbauen
+Guix ist die vorgesehene Umgebungsschicht für Ökosystem-Agenten.
 
-Wenn du an einem Projekt arbeitest, das mit OpenCode zusammenhängt und "opencode" als Teil seines Namens verwendet (z.B. "opencode-dashboard" oder "opencode-mobile"), füge bitte einen Hinweis in deine README ein, dass es nicht vom OpenCode-Team gebaut wird und nicht in irgendeiner Weise mit uns verbunden ist.
+Die Ziel-Abstraktion lautet:
 
----
+    Agent + Repository + Git-Revision + Guix-Umgebung + Task + Evidence
 
-**Tritt unserer Community bei** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode)
+### Authority-Grenzen
+
+Tauricode ist keine Authority für:
+
+- my-lisp-Sprachsemantik
+- cml-Compiler-Semantik
+- fpga-lisp-ISA
+- Paninianische Ontologie
+- Shiva-Kanon
+
+Es beobachtet und orchestriert diese Domänen; ihre eigenen
+Repositories und Contracts bleiben maßgeblich.
+
+## Verhältnis zu my-idea
+
+Der primäre Zweck von my-idea ist Systembeobachtung / Analyse /
+Evidence-Interpretation. Der primäre Zweck von Tauricode ist
+Agent-Ausführung / Umgebungs-Lebenszyklus / Task-Steuerung.
+
+Beide können dieselben zugrunde liegenden Daten lesen (Tasks,
+Evidence, Contracts) — diese Überschneidung ist erwartet und
+zulässig. Was sich nicht überschneiden darf, ist der primäre Zweck:
+my-idea wird nicht zu einer zweiten Control Plane, und Tauricode wird
+nicht zu einer zweiten Interpretationsschicht.
+
+## Verhältnis zu OpenCode
+
+Tauricode entstand aus der OpenCode-Codebasis, wird aber jetzt als
+eigenständiges Projekt weiterentwickelt.
+
+OpenCode wird behandelt als:
+
+- Anbieter einer Agent-Runtime
+- API-/Protokoll-Referenz
+- Quelle einzelner Implementierungsideen
+- Spender kompatibler Upstream-Komponenten
+
+OpenCode ist nicht die architektonische Authority für Tauricode.
+
+Das Projekt behält derzeit Teile der SolidJS-Anwendung und des
+Runtime-Codes von OpenCode bei, während die eigene Tauri/Rust-
+Architektur von Tauricode entwickelt wird.
+
+Tauricode ist nicht mit dem OpenCode-Team verbunden und wird nicht
+von ihm gepflegt.
+
+## Entwicklungs-Roadmap
+
+Stage 1 — Observer *(in Arbeit — Repository/Git-Slice ausgeliefert;
+Contracts, Tasks, Evidence und Guix-Beobachtung noch nicht)*
+- Repository-Zustand
+- Contracts und Drift
+- Tasks
+- Evidence
+- Guix-Zustand
+- lokale Runtime-Beobachtung
+
+Stage 2 — Launcher *(geplant)*
+- Agenten starten
+- reproduzierbare Guix-Umgebungen betreten
+- Runtime-Adapter starten
+
+Stage 3 — Controller *(geplant)*
+- kontrollierter Task-Lebenszyklus
+- Agenten-Lebenszyklus
+- explizite Berechtigungen und Authority-Grenzen
+
+Stage 4 — Reproducible Agent Workstation *(geplant)*
+- Umgebung + Agent + Task + Evidence als ein reproduzierbarer
+  Workflow
+
+## Aktuelle Implementierung
+
+    crates/
+      ecosystem-observer/
+
+Zukünftig:
+
+    packages/
+      desktop-tauri/
+
+## Architekturentscheidungen
+
+Diese Design- und Scope-Entscheidungen sind nicht nur als Prosa
+beschrieben, sondern als Datensätze unter
+`/home/agents/ecosystem/decisions/` festgehalten:
+
+- `ECO-DECISION-2026-08-19-TAURICODE-ROLE` — Rolle,
+  Authority-Grenzen, gestufter Weg (Observer → Launcher →
+  Controller → Reproducible Agent Workstation)
+- `ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER` —
+  Abnahmekriterien für Stage 1
+- `ECO-DECISION-2026-08-19-TAURICODE-TAURI-ARCHITECTURE` —
+  Platzierung der Tauri-Shell, `ecosystem-observer` als Rust-Crate,
+  OpenCode als Sidecar/Adapter
+
+Falls dieses README jemals von einem Entscheidungsdokument abweicht,
+gilt das Entscheidungsdokument.
+
+## Lizenz und Attribution
+
+Tauricode enthält und/oder leitet sich aus Teilen des OpenCode-Codes
+ab.
+
+Ursprüngliches OpenCode-Projekt: [anomalyco/opencode](https://github.com/anomalyco/opencode)
+
+Copyright- und Lizenzhinweise aus Upstream-Code müssen dort erhalten
+bleiben, wo dies erforderlich ist. Siehe `LICENSE` und die
+Repository-Historie für Details.
