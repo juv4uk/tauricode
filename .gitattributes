@@ -1,2 +1,28 @@
+# ── Line endings: repo = LF everywhere ─────────────────────────
+* text=auto eol=lf
+
+# Windows-only formats where CRLF is semantically required
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# ── Binaries (never normalize) ────────────────────────────────
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.wasm binary
+*.zip binary
+*.tar.gz binary
+*.pdf binary
+
+# ── Generated: keep diffs and language stats clean ────────────
 packages/core/migration/**/snapshot.json linguist-generated
 packages/core/src/database/migration.gen.ts linguist-generated
+bun.lock linguist-generated
+package-lock.json -diff linguist-generated
+Cargo.lock linguist-generated
