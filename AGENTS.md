@@ -159,3 +159,15 @@ const table = sqliteTable("session", {
 - Keep delivery vocabulary explicit. Prompts steer by default and promote at the next safe provider-turn boundary while the current drain requires continuation. An explicit `queue` input remains pending until the Session would otherwise become idle; promote one queued input at that boundary, then reevaluate continuation before promoting another. Promoting any new user input resets the selected agent's provider-turn allowance; a batch of steers resets it once.
 - Keep EventV2 replay owner claims separate from clustered Session execution ownership.
 - Keep the System Context algebra, registry, and built-ins in `src/system-context`; keep Context Source producers with their observed domains, and keep Session History selection plus Context Epoch persistence Session-owned.
+
+## Agent Guard (M0 — PROPOSED, 2026-08-22)
+
+План executable-constitution guardrails для агентських сесій:
+`/home/agents/ecosystem/plans/AGENT-GUARD-M0.md`
+
+Машинні гачки на C1/C7/C9/C11 (ox-alpha constitution v1.2):
+tool wrapper + evidence ledger + claim gate. Статус: план,
+реалізація не почата. Агенти, що заходять у репо: прочитайте
+план перед write-heavy роботою; зауваження — у plans/ або
+власнику напряму.
+
