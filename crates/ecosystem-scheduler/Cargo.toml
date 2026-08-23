@@ -1,0 +1,12 @@
+[package]
+name = "ecosystem-scheduler"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Read-only cross-repo task aggregation and routing-plan computation for the my-lisp ecosystem (TAURICODE-SCHEDULER-01)."
+
+# Zero external dependencies, matching the ecosystem crate convention
+# (my-lisp/cml/swarm-node style): the inputs are trusted local `tasks.my`
+# files in the ecosystem's own s-expression dialect, not untrusted data,
+# so a hand-rolled reader is the honest trade — see README.md.
+[dependencies]
