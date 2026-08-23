@@ -5,7 +5,7 @@
 //! reason about the mesh. Read-only by design: mutating ops stay with
 //! full agents via quorum-guarded claim-task (M1.1 authority boundary).
 
-use swarm_cli::{ops, out, tasks_file, wire};
+use swarm_cli::{adapters, ops, out, tasks_file, wire};
 use swarm_cli::out::Out;
 use std::process::ExitCode;
 
@@ -186,6 +186,94 @@ fn run(args: Vec<String>) -> Result<(), CliErr> {
             print_output(&out, &format);
             if ok { Ok(()) } else { Err(CliErr { msg: String::new(), code: 5 }) }
         }
+        "import" => {
+            // import --from json|gh|md <input> [--prefix P] [--priority N]
+            // Renders a canonical tasks.my on stdout (pipe into a repo or
+            // combine with sync). Never writes files itself.
+            let mut from = String::new();
+            let mut input = String::new();
+            let mut prefix: Option<String> = None;
+            let mut prio = String::from("3");
+            let mut it = rest.iter();
+            while let Some(a) = it.next() {
+                match a.as_str() {
+                    "--from" => from = it.next().ok_or_else(|| CliErr::usage("--from needs a value"))?.clone(),
+                    "--prefix" => prefix = Some(it.next().ok_or_else(|| CliErr::usage("--prefix needs a value"))?.clone()),
+                    "--priority" => prio = it.next().ok_or_else(|| CliErr::usage("--priority needs a value"))?.clone(),
+                    other if input.is_empty() && !other.starts_with('-') => input = other.to_string(),
+                    other => return Err(CliErr::usage(format!("unknown import flag `{other}`"))),
+                }
+            }
+            if input.is_empty() {
+                return Err(CliErr::usage("import requires an input file or directory"));
+            }
+            let tasks = match from.as_str() {
+                // md takes a DIRECTORY of notes — no whole-file read here.
+                "md" => adapters::tasks_from_md_dir(std::path::Path::new(&input)).map_err(CliErr::src)?,
+                other => {
+                    let text = std::fs::read_to_string(&input)
+                        .map_err(|e| CliErr::src(format!("cannot read {input}: {e}")))?;
+                    match other {
+                        "json" => adapters::tasks_from_json(&text).map_err(CliErr::src)?,
+                        "gh" => adapters::tasks_from_gh_json(
+                            &text,
+                            prefix.as_deref(),
+                            prio.parse().unwrap_or(3.0),
+                        )
+                        .map_err(CliErr::src)?,
+                        _ => return Err(CliErr::usage("--from must be json|gh|md")),
+                    }
+                }
+            };
+            let rendered: Vec<String> = tasks.iter().map(render_task_entry).collect();
+            println!("((kind . tasks-my)\n (tasks . (\n{} ))\n)", rendered.join(""));
+            eprintln!("import: {} tasks", tasks.len());
+            Ok(())
+        }
+        "export" => {
+            // export <file.my> --to gh|json|yaml|md
+            let mut to = String::new();
+            let mut input = String::new();
+            let mut it = rest.iter();
+            while let Some(a) = it.next() {
+                match a.as_str() {
+                    "--to" => to = it.next().ok_or_else(|| CliErr::usage("--to needs a value"))?.clone(),
+                    other if input.is_empty() && !other.starts_with('-') => input = other.to_string(),
+                    other => return Err(CliErr::usage(format!("unknown export flag `{other}`"))),
+                }
+            }
+            let text = std::fs::read_to_string(&input).map_err(|e| CliErr::src(format!("cannot read {input}: {e}")))?;
+            let tasks = tasks_file::parse_tasks_file(&text).map_err(CliErr::src)?;
+            match to.as_str() {
+                "md" => print!("{}", adapters::tasks_to_md_notes(&tasks)),
+                "gh" => {
+                    let gh: Vec<swarm_cli::minijson::Json> =
+                        tasks.iter().map(adapters::task_to_gh_json).collect();
+                    let outs: Vec<swarm_cli::out::Out> = gh.iter().map(adapters::json_to_out).collect();
+                    let items: Vec<String> = outs.iter().map(out::to_json).collect();
+                    println!("[{}]", items.join(","));
+                }
+                "json" | "yaml" => {
+                    let items: Vec<Out> = tasks
+                        .iter()
+                        .map(|t| {
+                            Out::m(vec![
+                                ("id", Out::S(t.id.clone())),
+                                ("priority", Out::N(t.priority.to_string())),
+                                ("capabilities", Out::L(t.capabilities.iter().map(|c: &String| Out::S(c.clone())).collect())),
+                                ("depends_on", Out::L(t.depends_on.iter().map(|d: &String| Out::S(d.clone())).collect())),
+                                ("done", Out::B(t.done)),
+                                ("description", Out::S(t.description.clone().unwrap_or_default())),
+                                ("origin", Out::S(t.origin.clone().unwrap_or_default())),
+                            ])
+                        })
+                        .collect();
+                    print_output(&Out::m(vec![("tasks", Out::L(items))]), &format);
+                }
+                other => return Err(CliErr::usage(format!("--to must be gh|json|yaml|md (got `{other}`)"))),
+            }
+            Ok(())
+        }
         "convert" => {
             let file = rest.first().ok_or_else(|| CliErr::usage("convert requires a file path"))?;
             let text = std::fs::read_to_string(file).map_err(|e| CliErr::src(format!("cannot read {file}: {e}")))?;
@@ -217,4 +305,25 @@ fn print_output(v: &Out, format: &str) {
         "yaml" => print!("{}", out::to_yaml(v)),
         _ => println!("{}", out::to_json(v)),
     }
+}
+
+fn render_task_entry(t: &swarm_cli::tasks_file::ParsedTask) -> String {
+    let mut s = format!("  (\"{}\" . (\n", t.id);
+    s.push_str(&format!("    (priority . {})\n", t.priority));
+    if !t.capabilities.is_empty() {
+        s.push_str(&format!("    (capabilities . ({}))\n", t.capabilities.join(" ")));
+    }
+    if !t.depends_on.is_empty() {
+        let deps: Vec<String> = t.depends_on.iter().map(|d| format!("{d:?}")).collect();
+        s.push_str(&format!("    (depends-on . ({}))\n", deps.join(" ")));
+    }
+    s.push_str(&format!("    (done . {})\n", if t.done { "t" } else { "()" }));
+    if let Some(d) = &t.description {
+        s.push_str(&format!("    (description . {d:?})\n"));
+    }
+    if let Some(o) = &t.origin {
+        s.push_str(&format!("    (origin . {o})\n"));
+    }
+    s.push_str("  ))\n");
+    s
 }

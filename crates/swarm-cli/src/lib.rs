@@ -6,6 +6,8 @@
 //! full response read-back while the server-side quorum keeps guarding
 //! authority (M1.1). Nothing here invents state or silently retries.
 
+pub mod adapters;
+pub mod minijson;
 pub mod ops;
 pub mod out;
 pub mod sexpr;
