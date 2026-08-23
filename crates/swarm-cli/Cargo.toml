@@ -1,0 +1,8 @@
+[package]
+name = "swarm-cli"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Swarm CLI adapters (check / explain / fmt) giving Level 0 agents JSON+YAML access to the swarm-node coordination plane (TAURICODE-SWARM-CLI-ADAPTERS)."
+
+[dependencies]
