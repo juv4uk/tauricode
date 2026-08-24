@@ -171,3 +171,20 @@ tool wrapper + evidence ledger + claim gate. Статус: план,
 план перед write-heavy роботою; зауваження — у plans/ або
 власнику напряму.
 
+
+## Environment: WSL2 + Guix (TAURICODE-GUIX-LAYER)
+
+Rust crates in `crates/` build and test inside the declared environment,
+not against ambient global installs:
+
+```
+guix shell -m manifest.scm --pure -- cargo test -p swarm-cli
+guix shell -m manifest.scm --pure -- bash scripts/env-check.sh
+```
+
+`env-check.sh` verifies both layers and exits non-zero on drift:
+1. Guix layer — rustc/cargo/git resolve inside the pure shell.
+2. Host layer — bun exists and matches `.bun-version` (mirrors
+   `package.json`'s `packageManager`). Guix does not package bun, so it
+   stays a pinned host install; an unpinned ambient bun is exactly the
+   "arbitrary global install" failure mode this contract closes.
