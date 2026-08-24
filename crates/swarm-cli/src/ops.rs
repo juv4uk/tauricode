@@ -120,6 +120,99 @@ pub fn explain(client: &Client, task_id: &str, repos_root: &Path) -> Result<Opti
     Ok(Some(out))
 }
 
+/// `(repo.my -> context card)`: instant LLM-friendly view of a repository's
+/// declared scope (Swarm Contract v0.1). Pure file reading — no mesh needed.
+pub fn context(repo_dir: &Path) -> Result<Out, String> {
+    use crate::sexpr::{self, Sexp};
+    let file = repo_dir.join("repo.my");
+    let text = std::fs::read_to_string(&file)
+        .map_err(|e| format!("cannot read {}: {e}", file.display()))?;
+    let form = sexpr::parse(&text).map_err(|e| format!("parse error in {file:?}: {e}"))?;
+
+    // Locate the (repository ...) form anywhere in the document.
+    fn find_repo(s: &Sexp) -> Option<&Sexp> {
+        match s {
+            Sexp::List(items) => {
+                if matches!(items.first(), Some(Sexp::Atom(a)) if a == "repository") {
+                    return Some(s);
+                }
+                items.iter().find_map(find_repo)
+            }
+            _ => None,
+        }
+    }
+    let repo = find_repo(&form).ok_or("no (repository ...) form found")?;
+
+    // Field extractor: (field v1 v2 ...) -> ["v1","v2",...]
+    let field_values = |name: &str| -> Vec<String> {
+        match repo.field(name) {
+            Some(tail) => tail
+                .iter()
+                .map(|v| match v {
+                    Sexp::Atom(a) => a.clone(),
+                    Sexp::Str(s) => s.clone(),
+                    other => other.to_text(),
+                })
+                .collect(),
+            None => vec![],
+        }
+    };
+    let one = |name: &str| field_values(name).into_iter().next().unwrap_or_default();
+
+    // Local tasks.my summary when the repo has one (counts only).
+    let (tasks_total, tasks_done) = match std::fs::read_to_string(repo_dir.join("tasks.my")) {
+        Ok(t) => match tasks_file::parse_tasks_file(&t) {
+            Ok(list) => (
+                list.len().to_string(),
+                list.iter().filter(|x| x.done).count().to_string(),
+            ),
+            Err(_) => ("0".into(), "0".into()),
+        },
+        Err(_) => ("0".into(), "0".into()),
+    };
+
+    Ok(Out::m(vec![
+        ("repo", Out::S(one("id"))),
+        ("role", Out::S(one("role"))),
+        ("exports", Out::L(field_values("exports").into_iter().map(Out::S).collect())),
+        ("imports", Out::L(field_values("imports").into_iter().map(Out::S).collect())),
+        (
+            "capabilities",
+            Out::L(field_values("capabilities").into_iter().map(Out::S).collect()),
+        ),
+        (
+            "authorities",
+            Out::L(field_values("authorities").into_iter().map(Out::S).collect()),
+        ),
+        (
+            "non_authorities",
+            Out::L(field_values("non-authorities").into_iter().map(Out::S).collect()),
+        ),
+        ("tasks_total", Out::N(tasks_total)),
+        ("tasks_done", Out::N(tasks_done)),
+        ("source", Out::S(file.display().to_string())),
+    ]))
+}
+
+/// Every direct subdirectory of `root` that declares a repo.my.
+pub fn all_contexts(root: &Path) -> Result<Out, String> {
+    let rd = std::fs::read_dir(root).map_err(|e| format!("cannot read root: {e}"))?;
+    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+    for e in rd.flatten() {
+        let p = e.path();
+        if p.is_dir() && p.join("repo.my").is_file() {
+            dirs.push(p);
+        }
+    }
+    dirs.sort();
+    let cards: Vec<Out> = dirs
+        .iter()
+        .filter_map(|d| context(d).ok())
+        .collect();
+    let count = cards.len();
+    Ok(Out::m(vec![("repos", Out::L(cards)), ("count", Out::N(count.to_string()))]))
+}
+
 /// `(next-best-action ...)`: wire-faithful passthrough. The mesh's ranking
 /// convention is documented in swarm-node itself; this adapter does not
 /// re-derive it, it transports the answer verbatim into structured data.

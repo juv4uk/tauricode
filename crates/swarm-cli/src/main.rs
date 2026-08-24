@@ -20,6 +20,8 @@ USAGE:
   swarm-cli task complete <ID> --gen N
   swarm-cli task release <ID> --gen N
   swarm-cli task define <ID> [--priority P] [--caps c1,c2] [--desc "..."]
+  swarm-cli context <repo-dir> [--json|--yaml]   (repo.my -> LLM context card)
+  swarm-cli context --all [--root DIR]           (every repo at once)
   swarm-cli convert <file.my> --json|--yaml     (tasks.my -> structured output)
 
 DEFAULTS: --node 127.0.0.1:9104 (override with SWARM_NODE env or flag).
@@ -272,6 +274,29 @@ fn run(args: Vec<String>) -> Result<(), CliErr> {
                 }
                 other => return Err(CliErr::usage(format!("--to must be gh|json|yaml|md (got `{other}`)"))),
             }
+            Ok(())
+        }
+        "context" => {
+            // context <repo-dir> | --all [--root DIR]  (LLM-friendly scope cards)
+            let mut all = false;
+            let mut root = String::from("/home/agents/GitHub");
+            let mut target: Option<String> = None;
+            let mut it = rest.iter();
+            while let Some(a) = it.next() {
+                match a.as_str() {
+                    "--all" => all = true,
+                    "--root" => root = it.next().ok_or_else(|| CliErr::usage("--root needs a value"))?.clone(),
+                    other if !other.starts_with('-') && target.is_none() => target = Some(other.to_string()),
+                    other => return Err(CliErr::usage(format!("unknown context flag `{other}`"))),
+                }
+            }
+            let out = if all {
+                ops::all_contexts(std::path::Path::new(&root)).map_err(CliErr::src)?
+            } else {
+                let dir = target.ok_or_else(|| CliErr::usage("context requires a repo directory or --all"))?;
+                ops::context(std::path::Path::new(&dir)).map_err(CliErr::src)?
+            };
+            print_output(&out, &format);
             Ok(())
         }
         "convert" => {
