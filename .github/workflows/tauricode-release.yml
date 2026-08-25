@@ -111,6 +111,12 @@ jobs:
     # artifacts actually exist rather than requiring all four or none.
     if: always()
     runs-on: ubuntu-latest
+    # Default GITHUB_TOKEN is read-only for releases unless explicitly
+    # granted contents: write here - confirmed by a real CI failure
+    # (HTTP 403 Resource not accessible by integration on
+    # `gh release create`), not predicted.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
