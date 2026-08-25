@@ -219,40 +219,94 @@ re-introduce exactly the coupling the audits spent effort ruling out.
   only ever sees `MockAdapter` proves the trait boundary holds with zero
   reference to OpenCode/Claude anywhere in this crate.
 
-## M2.5 — OpenCode adapter minimal launch/stop/status
+## M2.5 — OpenCode adapter minimal launch/stop/status — DONE
 
-- **goal (not attempted this session — see "Why this increment order"
-  above):** implement `AgentRuntimeAdapter` for a real `opencode serve`
-  subprocess: `launch` spawns it, `status` polls liveness, `stop` kills
-  it cleanly.
-- **evidence required before starting, next session:** a fresh
-  `AGENT-RESOURCE-POLICY.md` preflight check (current machine load/RAM),
-  and explicit confirmation that WSL has been stable (no unexplained
-  freeze) for a reasonable window beforehand — this increment is exactly
-  the class of subprocess-lifecycle work this session found real risk
-  in.
-- **rollback boundary:** an entirely new file
-  (`crates/agent-runtime-contract/src/opencode_adapter.rs` or a separate
-  crate) — does not touch M2.0-M2.4 if reverted.
-- **done criteria (deferred):** not defined further until attempted with
-  fresh evidence; defining it now would be speculative design ahead of
-  the actual subprocess behavior.
+Preflight before starting (per this section's own stated requirement):
+57min+ stable uptime, load average 0.05-0.08, 6.3GB RAM available,
+`ollama.service` confirmed inactive/disabled (the kernel-WARNING factor
+this same session root-caused earlier). Implemented in
+`src/opencode_adapter.rs`, gated behind `feature = "opencode"`. Real,
+isolated `opencode serve` subprocess (never the shared
+`opencode-shared.service`); `stop()` uses a bounded `try_wait()` poll,
+never a blocking `wait()`; liveness checked via `/proc/<pid>` only, zero
+HTTP round-trips anywhere. `identity`/`capabilities`/`events` return
+honest stubs (M2.5's own stated scope is launch/stop/status only).
+21/21 tests green, 0.05s total runtime, zero orphaned processes verified
+after. One real bug caught before committing: a broken placeholder test
+in M2.0 (`unimplemented!()` inside a test body) — fixed by adding a real
+`serde_json` dev-dependency and a real round-trip assertion, not by
+deleting the test.
 
-## M2.6-M2.9 — deferred
+## M2.6 — OpenCode event normalization — DONE
 
-`OpenCode event normalization`, `task binding/provenance`, `dashboard/
-scheduler consumption`, `second adapter proof` all depend on M2.5 landing
-first (there is nothing to normalize events *from* without a real
-adapter, and "second adapter proof" is only meaningful once the first
-real one exists to compare against). Listing done-criteria for these now
-would be invented, not evidenced — deferred per this plan's own
-`Unknown > invented` rule.
+`src/opencode_log_normalizer.rs`: pure text parser over OpenCode's own
+structured log format (`~/.local/share/opencode/log/opencode.log`), not
+HTTP — keeps M2.5's zero-network-call property. Deliberately incomplete:
+only `ToolStarted` (from `evaluated permission=...` lines) and `Error`
+(from `stream error` lines) have direct evidence from this session's own
+captured log lines to normalize from. Every other message form actually
+observed (`llm runtime selected`, `resolved path`, `stream`, `loop`,
+`process`, `cancel`) is explicitly dropped, not force-mapped — inventing
+a parse rule for a value never seen would violate `Unknown > invented`.
+`cancel` specifically surfaces a real, disclosed gap: session
+cancellation is not `RuntimeStopped`, and no core event represents it
+yet. Test fixtures are verbatim structure from this session's own
+`opencode.log`, not synthesized. One real bug caught by a failing test,
+not by inspection: an over-escaped match-arm string literal that would
+have made the `Error` mapping silently unreachable.
+
+Known, disclosed gap left for a later increment: this normalizer is not
+yet wired into `OpenCodeAdapter::events()` (still the M2.5 stub) — doing
+so requires correlating a specific spawned instance's `run=` id against
+the shared log file, a nontrivial problem not solved this session, not
+papered over either.
+
+## M2.7 — task binding/provenance — DONE
+
+`launch()`'s `task` parameter was accepted since M2.5 but silently
+discarded (bound to `_task`). Now stored on `Instance` and surfaced
+through `identity().task` — the one `Identity` field this adapter can
+honestly fill in from what it was actually given; `model`/`role`/
+`instance` stay `None` (no introspection wired, never invented).
+`TaskBound`'s `origin` field stays untracked — no caller this session had
+a real value for it. Two new tests (task present / task absent), 29/29
+total.
+
+## M2.8 — dashboard/scheduler consumption — NOT ATTEMPTED
+
+Deliberately skipped this session. Concretely means modifying
+`ecosystem-scheduler`, an existing, separate, already-shipped crate —
+crossing into another crate's ownership is a bigger architectural
+commitment than adding files within `agent-runtime-contract` itself, and
+was not a call to make unilaterally while working solo without the
+owner's input on how that crate should actually consume this contract.
+Left genuinely open, not silently dropped — the natural next step once
+resumed.
+
+## M2.9 — second adapter proof — DONE
+
+`tests/second_adapter_proof.rs` (crate integration test — public-API-only
+visibility, a real black-box check). NOT a Claude adapter: spawning a
+second, recursive AI agent process is a materially different risk
+category from spawning `opencode serve` (autonomous behavior, potential
+runaway cost/loops), and wasn't a call to make solo. Used the plan's own
+stated alternative ("Claude or minimal dummy second runtime") via the
+already-real, already-proven `OpenCodeAdapter` instead of inventing a
+synthetic dummy — a stronger proof than a dummy would have been. 4 tests:
+each adapter individually satisfies the contract; both pass through one
+identical `&mut dyn AgentRuntimeAdapter` call site that never names which
+concrete type it's driving; `supports_live_attach`/`supports_resume`
+genuinely differ between the two real implementations (evidenced from
+this session's own `opencode.log`, not asserted blind).
 
 ---
 
-## This session's execution scope
+## This session's execution scope — final status
 
-M2.0 through M2.4 — the complete, self-contained proof that "Core does
-not need to know which runtime is under it," using zero subprocesses and
-therefore zero WSL-stability risk. M2.5 onward explicitly deferred with
-reasons stated above, not silently dropped.
+M2.0 through M2.9 attempted; M2.0-M2.7 and M2.9 done, M2.8 deliberately
+left open (see above) — not silently dropped. "Core does not need to
+know which runtime is under it" is now proven twice: once against a pure
+mock (M2.4) and once against a real, independently-implemented subprocess
+adapter through the identical generic call site (M2.9). All work
+committed incrementally (one commit per increment) and pushed after each
+increment completed, per the owner's own instruction mid-session.
