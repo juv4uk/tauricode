@@ -35,6 +35,13 @@ use std::time::{Duration, Instant};
 struct Instance {
     child: Child,
     cwd: String,
+    /// M2.7: the Tauricode `TaskId` this instance was launched for, if
+    /// any — kept as our own string, never a runtime session id (audit:
+    /// "task-id != runtime session-id"). `origin` (audit's `TaskBound`
+    /// field) is not tracked yet - no caller of `launch()` this session
+    /// has anything to put there, so it stays absent rather than
+    /// invented.
+    task_id: Option<TaskId>,
 }
 
 #[derive(Default)]
@@ -79,7 +86,7 @@ impl OpenCodeAdapter {
 }
 
 impl AgentRuntimeAdapter for OpenCodeAdapter {
-    fn launch(&mut self, cwd: &str, _task: Option<TaskId>) -> Result<RuntimeHandle, AdapterError> {
+    fn launch(&mut self, cwd: &str, task: Option<TaskId>) -> Result<RuntimeHandle, AdapterError> {
         let port = self.next_port;
         self.next_port += 1;
 
@@ -105,6 +112,7 @@ impl AgentRuntimeAdapter for OpenCodeAdapter {
             Instance {
                 child,
                 cwd: cwd.to_string(),
+                task_id: task,
             },
         );
         Ok(handle)
@@ -135,10 +143,16 @@ impl AgentRuntimeAdapter for OpenCodeAdapter {
     }
 
     fn identity(&self, handle: &RuntimeHandle) -> Result<Identity, AdapterError> {
-        self.instances.get(handle).ok_or(AdapterError::NotFound)?;
-        // Honest stub: no real introspection wired yet (M2.5 scope is
-        // launch/stop/status only). Never invents a model/role value.
-        Ok(Identity::default())
+        let instance = self.instances.get(handle).ok_or(AdapterError::NotFound)?;
+        // M2.7: `task` is the one field this adapter can honestly fill in
+        // (it's what launch() was actually given). model/role/instance
+        // remain None - no real self-reported-identity introspection is
+        // wired yet, and this method never invents a value for a field
+        // it has no evidence for.
+        Ok(Identity {
+            task: instance.task_id.as_ref().map(|t| t.as_str().to_string()),
+            ..Identity::default()
+        })
     }
 
     fn capabilities(&self, handle: &RuntimeHandle) -> Result<Capabilities, AdapterError> {
@@ -201,8 +215,16 @@ mod tests {
     fn launch_then_stop_real_opencode_process() {
         let mut adapter = OpenCodeAdapter::new();
         let handle = adapter
-            .launch("/home/agents/GitHub/tauricode", None)
+            .launch(
+                "/home/agents/GitHub/tauricode",
+                Some(TaskId::new("STAGE2-M2.7-TEST")),
+            )
             .expect("launch should succeed - opencode binary confirmed present");
+
+        // M2.7: task binding round-trips through identity() - our own
+        // task id, never a runtime session id.
+        let identity = adapter.identity(&handle).unwrap();
+        assert_eq!(identity.task.as_deref(), Some("STAGE2-M2.7-TEST"));
 
         // Give the process a brief moment to actually start before the
         // first liveness check - bounded, not a blind sleep-and-hope.
@@ -235,5 +257,18 @@ mod tests {
         let mut adapter = OpenCodeAdapter::new();
         let bogus = RuntimeHandle::new("never-launched");
         assert_eq!(adapter.stop(&bogus).unwrap_err(), AdapterError::NotFound);
+    }
+
+    #[test]
+    fn launch_without_task_leaves_identity_task_none() {
+        let mut adapter = OpenCodeAdapter::new();
+        let handle = adapter
+            .launch("/home/agents/GitHub/tauricode", None)
+            .expect("launch should succeed");
+
+        let identity = adapter.identity(&handle).unwrap();
+        assert_eq!(identity.task, None);
+
+        adapter.stop(&handle).expect("stop should succeed");
     }
 }
