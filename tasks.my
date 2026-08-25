@@ -1,0 +1,24 @@
+; tasks.my — durable task plan for the tauricode agent
+; Format: same flat-alist convention as other ecosystem repos.
+; `done . t` only when real in-repo evidence exists.
+
+((tasks . (
+  ("TAURICODE-DERIVATION-STREAMER" . (
+    (priority . 7.0)
+    (capabilities . (tauricode rust typescript react))
+    (description . "Implement Paninian derivation proof graph streamer per recommendations-tauricode-prototypes.md section 1.3. Step-by-step playback, AST diff, Paribhasha conflict resolution visualization.")
+    (done . ())
+  ))
+  ("TAURICODE-SWARM-DASHBOARD-FIXTURES" . (
+    (priority . 7.5)
+    (capabilities . (tauricode rust typescript))
+    (description . "Port fixtures.ts mock data (6 mesh nodes, Paninian derivation traces, phoneme table) into SwarmDashboardState::full_fixtures(). Done: 95d981b83 by wsl-nidana-1.")
+    (done . t)
+  ))
+  ("TAURICODE-AGENT-RUNTIME-CONTRACT" . (
+    (priority . 8.0)
+    (capabilities . (tauricode rust))
+    (description . "AgentRuntimeAdapter trait, MockAdapter, real OpenCodeAdapter, event normalization, task binding. M2.0-M2.9 done+pushed.")
+    (done . t)
+  ))
+))
