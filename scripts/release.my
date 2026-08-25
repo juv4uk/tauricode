@@ -122,5 +122,5 @@
             (print (string-append
                      "Release page once builds finish: https://github.com/juv4uk/tauricode/releases/tag/"
                      *release-tag*)))))
-        (t (quote push-failed)))))
-  (t (quote tag-failed))))
+        (t (quote push-failed))))))
+  (t (quote tag-failed)))
