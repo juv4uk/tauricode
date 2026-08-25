@@ -250,8 +250,21 @@ pub async fn stream_phoneme_vector(
     Ok(data)
 }
 
-/// Helper function to register commands with Tauri v2 Builder
-pub fn register_swarm_commands<R: tauri::Runtime>() -> impl Fn(tauri::ipc::Invoke<R>) -> bool {
+/// Helper function to register commands with Tauri v2 Builder.
+///
+/// Concrete `tauri::Wry` runtime, not generic over `R: tauri::Runtime`:
+/// this app is a single-runtime desktop shell, never instantiated with
+/// any other `Runtime` impl, so genericity here bought nothing. It also
+/// broke: `stream_phoneme_vector` takes a bare `AppHandle` (= `AppHandle<Wry>`
+/// by that type's own default), which `tauri::generate_handler!` cannot
+/// match against an actually-generic `R` — rustc reported this as
+/// `AppHandle: CommandArg<'_, R>` not satisfied / "Deserialize not
+/// implemented for AppHandle", which is the macro falling back to
+/// treating `AppHandle` as an ordinary deserializable argument once it
+/// no longer recognizes it as the special injected-runtime type for a
+/// still-open `R`. Confirmed via a real Windows CI compile failure
+/// (gh run view --repo juv4uk/tauricode --log-failed), not predicted.
+pub fn register_swarm_commands() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool {
     tauri::generate_handler![
         get_swarm_topology,
         query_derivation_trace,
