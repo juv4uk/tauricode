@@ -8,6 +8,8 @@ mod lifecycle;
 mod mock;
 #[cfg(feature = "opencode")]
 mod opencode_adapter;
+#[cfg(feature = "opencode")]
+mod opencode_log_normalizer;
 mod types;
 
 pub use adapter::{AdapterError, AgentRuntimeAdapter};
@@ -17,4 +19,6 @@ pub use lifecycle::{HandleRegistry, LifecycleState, TransitionError};
 pub use mock::MockAdapter;
 #[cfg(feature = "opencode")]
 pub use opencode_adapter::OpenCodeAdapter;
+#[cfg(feature = "opencode")]
+pub use opencode_log_normalizer::normalize_opencode_log_line;
 pub use types::{Capabilities, Identity, RuntimeHandle, Status, TaskId, Workspace};
