@@ -1,6 +1,13 @@
 # Tauricode — agent-runtime-ui (official)
 
-**Status:** Slice 1, first real vertical slice — not the full architecture yet.
+**Status:** Slice 1 — **VERIFIED milestone** (2026-08-25). Real
+`EcosystemSnapshot` via `ecosystem-observer`, `cargo check` PASS,
+`ecosystem-observer` test suite PASS, 0 warnings, CI PASS (run
+32865864898). Not the full architecture yet — see "What's still open"
+below. Stopping here deliberately: the next step (extending
+`EcosystemSnapshot` to Guix/contracts/tasks/evidence, or starting
+`packages/app` UI integration) is a separate decision, not an automatic
+continuation of this one.
 **Decision:** `ECO-DECISION-2026-08-19-TAURICODE-ROLE` / `ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER` / `ECO-DECISION-2026-08-19-TAURICODE-TAURI-ARCHITECTURE` (all ACCEPTED, `/home/agents/ecosystem/decisions/`).
 **Not to be confused with:** `prototype/swarm_dashboard/` — an unrelated, mock-data-driven prototype (see its own README's boundary note). This package is the real one: everything it displays comes from a live scan, never a fixture.
 
