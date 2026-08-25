@@ -1,0 +1,133 @@
+name: Tauricode release
+
+# Triggered by a `t*` tag push (matches this project's own tagging
+# convention — t0.0.1 was cut by hand the same way). Builds all four
+# release targets in parallel, then assembles one GitHub Release from
+# whatever actually succeeded — never claims a target succeeded that
+# didn't run.
+on:
+  push:
+    tags:
+      - "t*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release (for a manual re-run)"
+        required: true
+        type: string
+
+jobs:
+  windows-desktop:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: prototype/swarm_dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install
+      - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-desktop
+          if-no-files-found: error
+          path: |
+            prototype/swarm_dashboard/src-tauri/target/release/bundle/msi/*.msi
+            prototype/swarm_dashboard/src-tauri/target/release/bundle/nsis/*.exe
+
+  windows-console:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # No root workspace Cargo.toml exists in this repo (each crates/*
+      # crate is standalone, by design - see docs/STAGE2-RUNTIME-ADAPTER-PLAN.md's
+      # own note on this convention) - `-p` package selection from repo
+      # root isn't available, so each crate is built via its own
+      # manifest-path instead, into its own target/ directory.
+      - run: cargo build --release --manifest-path crates/swarm-cli/Cargo.toml
+      - run: cargo build --release --manifest-path crates/ecosystem-scheduler/Cargo.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-console
+          if-no-files-found: error
+          path: |
+            crates/swarm-cli/target/release/swarm-cli.exe
+            crates/ecosystem-scheduler/target/release/ecosystem-scheduler.exe
+
+  linux-desktop:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: prototype/swarm_dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # Package list per Tauri v2's own Linux prerequisites doc, not
+      # guessed - this is the standard apt set for building a Tauri v2
+      # app on Ubuntu (webkit2gtk 4.1, not the older 4.0 tauricode's own
+      # earlier donor-build investigation hit version-drift on).
+      - name: Install Tauri Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential \
+            curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev \
+            librsvg2-dev
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install
+      - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-desktop
+          if-no-files-found: error
+          path: |
+            prototype/swarm_dashboard/src-tauri/target/release/bundle/deb/*.deb
+            prototype/swarm_dashboard/src-tauri/target/release/bundle/rpm/*.rpm
+            prototype/swarm_dashboard/src-tauri/target/release/bundle/appimage/*.AppImage
+
+  linux-console:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --manifest-path crates/swarm-cli/Cargo.toml
+      - run: cargo build --release --manifest-path crates/ecosystem-scheduler/Cargo.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-console
+          if-no-files-found: error
+          path: |
+            crates/swarm-cli/target/release/swarm-cli
+            crates/ecosystem-scheduler/target/release/ecosystem-scheduler
+
+  release:
+    needs: [windows-desktop, windows-console, linux-desktop, linux-console]
+    # Runs even if some targets failed - reports honestly on whichever
+    # artifacts actually exist rather than requiring all four or none.
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: List collected artifacts
+        run: find dist -type f
+      - name: Determine tag
+        id: tag
+        run: echo "tag=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.tag.outputs.tag }}" \
+            --title "Tauricode ${{ steps.tag.outputs.tag }}" \
+            --notes "Automated release build: Windows/Linux desktop + console. See individual job logs for which targets actually succeeded - this step attaches whatever artifacts were produced, never claims a target that didn't run." \
+            --repo "${{ github.repository }}" \
+            dist/*/* || \
+          gh release upload "${{ steps.tag.outputs.tag }}" dist/*/* --repo "${{ github.repository }}" --clobber
