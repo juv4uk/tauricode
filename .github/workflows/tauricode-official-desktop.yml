@@ -27,7 +27,9 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun install
-      - name: cargo check (compiles for real, no bundling — bundle.active is false)
+      - name: cargo check (compiles for real)
         run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: this package's own tests, including the fresh-directory portability experiment
+        run: cargo test --manifest-path src-tauri/Cargo.toml
       - name: ecosystem-observer's own test suite (unrelated to this package's build, sanity check only)
         run: cargo test --manifest-path ../../crates/ecosystem-observer/Cargo.toml
