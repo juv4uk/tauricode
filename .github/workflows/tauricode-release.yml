@@ -1,10 +1,11 @@
 name: Tauricode release
 
 # Triggered by a `t*` tag push (matches this project's own tagging
-# convention — t0.0.1 was cut by hand the same way). Builds all four
-# release targets in parallel, then assembles one GitHub Release from
-# whatever actually succeeded — never claims a target succeeded that
-# didn't run.
+# convention — t0.0.1 was cut by hand the same way). Builds six release
+# targets in parallel — the prototype/swarm_dashboard/ shell + console
+# tools (Windows/Linux) and the official packages/desktop-tauri/ shell
+# (Windows/Linux) — then assembles one GitHub Release from whatever
+# actually succeeded — never claims a target succeeded that didn't run.
 on:
   push:
     tags:
@@ -105,8 +106,71 @@ jobs:
             crates/swarm-cli/target/release/swarm-cli
             crates/ecosystem-scheduler/target/release/ecosystem-scheduler
 
+  # The official Tauricode shell (ECO-DECISION-2026-08-19-TAURICODE-ROLE),
+  # packages/desktop-tauri/ - distinct from prototype/swarm_dashboard/
+  # above. Same build recipe (already twice verified today for the
+  # prototype): bundle.targets: "all" + both icon formats declared, so
+  # this doesn't hit the same icon.png/bundle-target CI failures found
+  # and fixed earlier.
+  windows-official-desktop:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: packages/desktop-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install
+      - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-official-desktop
+          if-no-files-found: error
+          path: |
+            packages/desktop-tauri/src-tauri/target/release/bundle/msi/*.msi
+            packages/desktop-tauri/src-tauri/target/release/bundle/nsis/*.exe
+
+  linux-official-desktop:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/desktop-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Tauri Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential \
+            curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev \
+            librsvg2-dev
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install
+      - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-official-desktop
+          if-no-files-found: error
+          path: |
+            packages/desktop-tauri/src-tauri/target/release/bundle/deb/*.deb
+            packages/desktop-tauri/src-tauri/target/release/bundle/rpm/*.rpm
+            packages/desktop-tauri/src-tauri/target/release/bundle/appimage/*.AppImage
+
   release:
-    needs: [windows-desktop, windows-console, linux-desktop, linux-console]
+    needs:
+      [
+        windows-desktop,
+        windows-console,
+        linux-desktop,
+        linux-console,
+        windows-official-desktop,
+        linux-official-desktop,
+      ]
     # Runs even if some targets failed - reports honestly on whichever
     # artifacts actually exist rather than requiring all four or none.
     if: always()
@@ -142,7 +206,7 @@ jobs:
           mapfile -d '' -t assets < <(find dist -type f -print0)
           gh release create "${{ steps.tag.outputs.tag }}" \
             --title "Tauricode ${{ steps.tag.outputs.tag }}" \
-            --notes "Automated release build: Windows/Linux desktop + console. See individual job logs for which targets actually succeeded - this step attaches whatever artifacts were produced, never claims a target that didn't run." \
+            --notes "Automated release build: prototype/swarm_dashboard (Windows/Linux desktop + console) and the official packages/desktop-tauri agent-runtime-ui (Windows/Linux). See individual job logs for which targets actually succeeded - this step attaches whatever artifacts were produced, never claims a target that didn't run." \
             --repo "${{ github.repository }}" \
             "${assets[@]}" || \
           gh release upload "${{ steps.tag.outputs.tag }}" "${assets[@]}" --repo "${{ github.repository }}" --clobber
