@@ -11,13 +11,21 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # Without this, the bot's own commit fails to push whenever a
-      # push touches .github/workflows/*.yml - GitHub blocks a token
-      # without this scope from modifying workflow files, even via a
-      # plain `git push` (confirmed via a real CI failure: "refusing to
-      # allow a GitHub App to create or update workflow ... without
-      # `workflows` permission", run 32870242419).
-      workflows: write
+      # Deliberately NOT requesting `workflows: write` here - tried it
+      # (run 32872093461) and it made things worse: GitHub refuses to
+      # even start this workflow's jobs at all when it requests that
+      # scope (0 jobs dispatched), because the default GITHUB_TOKEN can
+      # never be granted `workflows` permission, full stop - this is a
+      # hard GitHub platform restriction, not a repo/org setting this
+      # `permissions:` block can work around. Consequence, accepted as
+      # a known, permanent quirk rather than "fixed": whenever a push
+      # touches .github/workflows/*.yml, this job's own auto-commit
+      # step will fail at the final `git push` (confirmed, run
+      # 32870242419) - everything else in the job still runs and
+      # reports correctly, it's only the bot's own reformatting commit
+      # for that one push that's lost. Run prettier on workflow files
+      # by hand before committing them instead.
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
