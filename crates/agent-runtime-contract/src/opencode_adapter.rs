@@ -1,8 +1,9 @@
-//! M2.5 — OpenCode adapter, minimal launch/stop/status only, as scoped in
-//! `docs/STAGE2-RUNTIME-ADAPTER-PLAN.md`. Deliberately does NOT implement
-//! real identity/capabilities/workspace introspection or event
-//! normalization (M2.6) — those return honest stubs here, not invented
-//! data.
+//! M2.5 — OpenCode adapter, minimal launch/stop/status (identity/
+//! capabilities still honest stubs — no introspection wired for those
+//! fields, task binding is M2.7's addition below). Event normalization
+//! (M2.6) is wired in here too, via `--print-logs` (confirmed real flag:
+//! `opencode serve --help` → `--print-logs   print logs to stderr`) piped
+//! to a dedicated background reader thread, never the calling thread.
 //!
 //! Gated behind `feature = "opencode"` (same pattern as `mock`'s
 //! `cfg(any(test, feature = "mock"))`) so a default build never spawns a
@@ -22,19 +23,33 @@
 //!   its tests — liveness is checked at the OS-process level only
 //!   (`try_wait()`), the same provenance class `ecosystem-observer`
 //!   already uses for "OS-observed" facts.
+//! - stderr is read on its own background thread into an `mpsc` channel;
+//!   `events()` only ever does a non-blocking `try_recv()` drain on the
+//!   calling thread — a blocking read never sits on any path a caller of
+//!   this trait can be stuck behind.
 
 #![cfg(feature = "opencode")]
 
 use crate::adapter::{AdapterError, AgentRuntimeAdapter};
 use crate::events::Event;
+use crate::opencode_log_normalizer::normalize_opencode_log_line;
 use crate::types::{Capabilities, Identity, RuntimeHandle, Status, TaskId, Workspace};
 use std::collections::HashMap;
-use std::process::{Child, Command};
+use std::io::{BufRead, BufReader};
+use std::process::{Child, Command, Stdio};
+use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
 
 struct Instance {
     child: Child,
     cwd: String,
+    /// M2.9.5: raw `--print-logs` lines from this instance's own stderr,
+    /// read on a dedicated background thread (never the calling thread —
+    /// a blocking `read_line` belongs off the path any `status`/`stop`
+    /// caller takes) and drained non-blockingly here via `try_recv()`.
+    /// Confirmed real flag, not invented: `opencode serve --help` →
+    /// `--print-logs   print logs to stderr`.
+    log_lines: Receiver<String>,
     /// M2.7: the Tauricode `TaskId` this instance was launched for, if
     /// any — kept as our own string, never a runtime session id (audit:
     /// "task-id != runtime session-id"). `origin` (audit's `TaskBound`
@@ -90,20 +105,44 @@ impl AgentRuntimeAdapter for OpenCodeAdapter {
         let port = self.next_port;
         self.next_port += 1;
 
-        let child = Command::new("opencode")
+        let mut child = Command::new("opencode")
             .args([
                 "serve",
+                "--print-logs",
                 "--hostname",
                 "127.0.0.1",
                 "--port",
                 &port.to_string(),
             ])
             .current_dir(cwd)
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
             .spawn()
             .map_err(|e| AdapterError::LaunchFailed(e.to_string()))?;
+
+        // stderr is guaranteed Some: we set Stdio::piped() above and the
+        // spawn above already succeeded.
+        let stderr = child.stderr.take().expect("piped stderr must be present");
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines() {
+                match line {
+                    Ok(l) => {
+                        // send() only fails if the receiver (this
+                        // Instance) was already dropped - nothing to do
+                        // but stop reading, which returning here does.
+                        if tx.send(l).is_err() {
+                            return;
+                        }
+                    }
+                    Err(_) => return,
+                }
+            }
+            // EOF (process's stderr closed, i.e. it exited) - thread
+            // ends naturally, nothing left to block on.
+        });
 
         self.next_id += 1;
         let handle = RuntimeHandle::new(format!("opencode-{}", self.next_id));
@@ -112,6 +151,7 @@ impl AgentRuntimeAdapter for OpenCodeAdapter {
             Instance {
                 child,
                 cwd: cwd.to_string(),
+                log_lines: rx,
                 task_id: task,
             },
         );
@@ -169,9 +209,20 @@ impl AgentRuntimeAdapter for OpenCodeAdapter {
     }
 
     fn events(&self, handle: &RuntimeHandle) -> Result<Vec<Event>, AdapterError> {
-        self.instances.get(handle).ok_or(AdapterError::NotFound)?;
-        // Honest stub: event normalization is M2.6, not this increment.
-        Ok(Vec::new())
+        let instance = self.instances.get(handle).ok_or(AdapterError::NotFound)?;
+        // Non-blocking drain: try_recv() on mpsc::Receiver never blocks
+        // the caller - it returns immediately whether or not a line is
+        // ready, preserving the "no hang" property every method in this
+        // adapter is held to. Lines with no normalization mapping (see
+        // opencode_log_normalizer's module doc for the full disclosed
+        // list) are silently filtered out here, not force-mapped.
+        let mut events = Vec::new();
+        while let Ok(line) = instance.log_lines.try_recv() {
+            if let Some(event) = normalize_opencode_log_line(&line, handle) {
+                events.push(event);
+            }
+        }
+        Ok(events)
     }
 
     fn supports_live_attach(&self) -> bool {
@@ -243,6 +294,18 @@ mod tests {
         assert_eq!(
             workspace.cwd.as_deref(),
             Some("/home/agents/GitHub/tauricode")
+        );
+
+        // events() never blocks, called twice in a row - a live idle
+        // instance may legitimately produce zero normalized events (no
+        // tool/error activity happened), but the call itself must always
+        // return promptly either way.
+        let call_start = Instant::now();
+        let _first_drain = adapter.events(&handle).unwrap();
+        let _second_drain = adapter.events(&handle).unwrap();
+        assert!(
+            call_start.elapsed() < Duration::from_millis(500),
+            "events() must never block waiting for log lines"
         );
 
         adapter.stop(&handle).expect("stop should succeed within bounded wait");

@@ -19,3 +19,11 @@ mock = []
 # Real, subprocess-spawning OpenCode adapter (M2.5). Opt-in: a default
 # build/test run never spawns a real process.
 opencode = []
+
+# Declared so `cargo build/clippy --all-targets` (no features) skips this
+# target instead of failing to compile it - the test genuinely needs both
+# concrete adapters (M2.9's whole point), it isn't an oversight that it
+# can't build without them.
+[[test]]
+name = "second_adapter_proof"
+required-features = ["mock", "opencode"]
