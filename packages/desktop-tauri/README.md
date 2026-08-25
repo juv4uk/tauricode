@@ -26,25 +26,38 @@ NOW    core is portable        — ecosystem-observer::discover_ecosystem
                                   through one identical generic call
                                   site, M2.9).
 
-NEXT   observer desktop is     — this package's command layer no
-       configurable              longer hardcodes the repo list either
-                                  (ECOSYSTEM_REPOS env var, comma-
-                                  separated, same pattern as
-                                  ECOSYSTEM_ROOT). Both env vars
-                                  verified with 4 unit-test scenarios
-                                  (default/custom/empty/stray-commas)
-                                  in an isolated scratch crate before
-                                  landing here.
+NEXT   observer desktop is     — VERIFIED via a real fresh-directory
+       configurable              experiment (2026-08-25), not just unit
+                                  tests. Three real git repos created
+                                  outside the ecosystem (repo-a: clean,
+                                  branch "main"; repo-b: dirty, branch
+                                  "trunk" — a non-standard branch name,
+                                  deliberately, to rule out any hidden
+                                  main/master assumption; repo-c: not a
+                                  git repo at all), pointed at via
+                                  ECOSYSTEM_ROOT/ECOSYSTEM_REPOS, same
+                                  command logic, zero source edits
+                                  between the default run (still scans
+                                  this ecosystem's real 6 repos
+                                  unchanged) and the fresh-repo run.
+                                  All three outcomes matched exactly:
+                                  repo-a Complete/clean, repo-b
+                                  Complete/dirty with the right changed
+                                  path, repo-c Failed with a clear error
+                                  and no crash — per-repo independence
+                                  held.
 
 LATER  whole agent ecosystem   — NOT attempted. Needs: contracts/tasks/
        is portable                evidence reading (ecosystem-observer
                                   itself still says this is "out of
-                                  scope"), a real fresh-repo-set
-                                  end-to-end test with zero
-                                  my-lisp-specific patches, and
-                                  packages/app UI integration. Do not
-                                  claim this level until that
-                                  experiment actually runs.
+                                  scope") and packages/app UI
+                                  integration. The fresh-repo experiment
+                                  above only exercises the observer +
+                                  command-layer config surface — it does
+                                  not touch contracts/tasks/evidence or
+                                  the UI at all. Do not claim this level
+                                  until those are actually built and
+                                  tested.
 ```
 
 ## What this slice actually does
@@ -63,8 +76,14 @@ A minimal, deliberately plain `web/index.html` calls the command and
 renders the result. This is **not** `packages/app` (the shared SolidJS
 UI) — that integration is a separate, larger follow-up, not attempted
 in this slice, to avoid reworking an unfamiliar, substantial codebase
-in one unreviewed pass. `bundle.active` is `false`: this slice proves
-the real data pipeline, it does not ship an installer.
+in one unreviewed pass.
+
+`bundle.active` was `false` for the initial Slice 1 proof (data
+pipeline only, no installer); enabled (`targets: "all"`) once the
+owner asked for a full release including this shell. Real installers
+shipped under the `t0.1.0` tag (msi/nsis for Windows, deb/rpm/AppImage
+for Linux) — CI-verified (run 32867196281), see
+https://github.com/juv4uk/tauricode/releases/tag/t0.1.0.
 
 ## Deliberate deviations from the ACCEPTED architecture's illustrative file tree
 
