@@ -358,13 +358,23 @@ this session's own `opencode.log`, not asserted blind).
 
 ## This session's execution scope — final status
 
-M2.0 through M2.9 attempted; M2.0-M2.7 and M2.9 done, M2.8 deliberately
-left open (see above) — not silently dropped. "Core does not need to
-know which runtime is under it" is now proven twice: once against a pure
-mock (M2.4) and once against a real, independently-implemented subprocess
-adapter through the identical generic call site (M2.9). All work
-committed incrementally (one commit per increment) and pushed after each
-increment completed, per the owner's own instruction mid-session.
+M2.0 through M2.10 attempted; all done. M2.8 went through two honest
+rescopes rather than being forced into a domain it didn't fit (see
+above) — the owner's own call each time, not assumed. "Core does not
+need to know which runtime is under it" is proven twice: once against
+a pure mock (M2.4) and once against a real, independently-implemented
+subprocess adapter through the identical generic call site (M2.9). The
+real Tauri desktop shell now carries two independent, non-overlapping
+IPC surfaces: swarm-mesh topology/derivation/phoneme data (M2.10) and
+agent-runtime-contract adapter status (M2.8, 2nd rescope) — CI-verified
+green for the former (run 32855223160), pending the same real-build
+gate for the latter. All work committed incrementally and pushed after
+each increment, per the owner's own instruction mid-session.
+
+No further increment is defined beyond M2.10 in this document as of
+this update — the documented Stage 2 scope is exhausted. A Stage 3 (or
+this plan's own continuation) needs the owner's direction, not an
+assumed next target.
 
 ## M2.10 — wire tauri_ipc.rs into the real shell — DONE, CI-VERIFIED GREEN
 
