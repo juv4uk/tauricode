@@ -1,0 +1,26 @@
+[package]
+name = "tauricode-desktop-tauri"
+version = "0.1.0"
+description = "Tauricode official agent-runtime-ui shell (ECO-DECISION-2026-08-19-TAURICODE-ROLE) - Slice 1: read-only EcosystemSnapshot display"
+edition = "2021"
+build = "build.rs"
+
+[lib]
+name = "tauricode_desktop_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+# Path dependency to the repo-root crate, not a copy under
+# crates/ecosystem-observer/ nested inside this tree - the ACCEPTED
+# architecture's own file-tree section was marked "proposal, nothing
+# created", and ecosystem-observer already exists at
+# crates/ecosystem-observer/ as real, tested Slice 1+2 code (predates
+# this package). Moving/duplicating it was a bigger, riskier decision
+# than this first slice needed - disclosed here rather than silently
+# deviating from the illustrative tree.
+ecosystem-observer = { path = "../../../crates/ecosystem-observer" }

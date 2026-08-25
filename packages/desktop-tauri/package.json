@@ -1,0 +1,13 @@
+{
+  "name": "@tauricode/desktop-tauri",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tauricode official agent-runtime-ui shell (ECO-DECISION-2026-08-19-TAURICODE-ROLE) - Slice 1",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

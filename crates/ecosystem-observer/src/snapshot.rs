@@ -2,6 +2,15 @@
 //! `EcosystemSnapshot`/`RepositorySnapshot`/`GitState`/`ScanMetadata` only —
 //! no Guix, tasks, or evidence fields on this slice.
 //!
+//! `serde::Serialize` added to every type here (2026-08-25, first real
+//! `packages/desktop-tauri/` slice per `ECO-DECISION-2026-08-19-
+//! TAURICODE-TAURI-ARCHITECTURE`): a Tauri command needs to return this
+//! shape as JSON to the frontend. `serde`/`serde_json` were already a
+//! dependency of this crate (Slice 2's identity-contract parsing), so
+//! this is a derive addition, not a new dependency. `Deserialize` is
+//! deliberately not added — nothing in this crate or its consumers
+//! reads an `EcosystemSnapshot` back in, only produces one.
+//!
 //! **Known technical debt, recorded deliberately rather than fixed here:**
 //! `GitState`'s per-probe fields (`is_dirty: bool`, `changed_paths:
 //! Vec<String>`, `remotes: Vec<RemoteInfo>`, `branch: Option<String>`) are
@@ -24,14 +33,14 @@
 /// read, and `GitState::unavailable` names which ones weren't.
 /// `Failed`: repository state could not be obtained at all — either the
 /// path isn't a git repository, or every probe failed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 pub enum ScanStatus {
     Complete,
     Partial,
     Failed,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct RemoteInfo {
     pub name: String,
     pub url: String,
@@ -40,13 +49,13 @@ pub struct RemoteInfo {
 /// One read-only probe (`"branch"`, `"head_sha"`, `"dirty"`, or
 /// `"remotes"` — matching the function names in `git_read`) that failed
 /// for an otherwise-valid git repository, with a human-readable reason.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ProbeFailure {
     pub probe: String,
     pub reason: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct GitState {
     /// Placeholder (`None`) when the `"branch"` probe is in `unavailable`
     /// — check `unavailable` before treating this as "detached", which is
@@ -88,7 +97,7 @@ pub struct GitState {
     pub unavailable: Vec<ProbeFailure>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct RepositorySnapshot {
     pub name: String,
     pub path: String,
@@ -97,7 +106,7 @@ pub struct RepositorySnapshot {
     pub error: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ScanMetadata {
     pub scan_id: String,
     pub started_at: String,
@@ -134,7 +143,7 @@ pub struct ScanMetadata {
 ///   all. Its identity fields are never surfaced as this process's own.
 /// - `NotFound`: the OS-observed process is real (and relevant — see
 ///   `AgentProcess`) but has no self-reported record at all. Not an error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 pub enum IdentityStatus {
     Fresh,
     Stale,
@@ -147,7 +156,7 @@ pub enum IdentityStatus {
 /// `AgentProcess::identity_status` in the first place — treat every field
 /// as a claim, per the ecosystem's own doctrine that an unverified report
 /// is not evidence.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize)]
 pub struct SelfReportedIdentity {
     pub model: Option<String>,
     pub role: Option<String>,
@@ -168,7 +177,7 @@ pub struct SelfReportedIdentity {
 /// command/cwd/start-time facts for a process that isn't there. This is
 /// what makes the orphaned-identity-file-for-a-dead-PID case (see
 /// `IdentityStatus::Orphaned`) representable without faking anything.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct OsObservedFacts {
     pub command: String,
     pub cwd: Option<String>,
@@ -185,7 +194,7 @@ pub struct OsObservedFacts {
 /// (`os_observed: None`, `identity_status: Orphaned`). Irrelevant OS
 /// processes (the vast majority on any real machine) are never included
 /// here at all; this is not a full process list.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct AgentProcess {
     pub pid: u32,
     /// `None` means exactly one thing: no OS process with this `pid`
@@ -199,7 +208,7 @@ pub struct AgentProcess {
     pub identity: SelfReportedIdentity,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct EcosystemSnapshot {
     pub scan: ScanMetadata,
     pub repositories: Vec<RepositorySnapshot>,

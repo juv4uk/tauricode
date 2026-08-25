@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tauricode — Ecosystem Snapshot</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f19;
+        --panel: #131a2a;
+        --border: #223049;
+        --text: #e2e8f0;
+        --muted: #7c8aa5;
+        --ok: #22c55e;
+        --warn: #eab308;
+        --err: #ef4444;
+        --accent: #0284c7;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-monospace, "SF Mono", Consolas, monospace;
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 1.1rem;
+        margin: 0 0 0.25rem;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+      }
+      button {
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font: inherit;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .repo {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin: 0.6rem 0;
+      }
+      .repo-name {
+        font-weight: 600;
+      }
+      .status-Complete {
+        color: var(--ok);
+      }
+      .status-Partial {
+        color: var(--warn);
+      }
+      .status-Failed {
+        color: var(--err);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin: 0.4rem 0 0;
+      }
+      #meta {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin: 1rem 0;
+      }
+      #error {
+        color: var(--err);
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tauricode — Ecosystem Snapshot</h1>
+    <div class="sub">
+      Slice 1 (ECO-DECISION-2026-08-19-TAURICODE-ROLE) — real, read-only observation via
+      <code>ecosystem-observer</code>. No fixture data.
+    </div>
+    <button id="scan">Run scan</button>
+    <div id="meta"></div>
+    <div id="error"></div>
+    <div id="repos"></div>
+
+    <script>
+      const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null
+
+      async function runScan() {
+        const btn = document.getElementById("scan")
+        const meta = document.getElementById("meta")
+        const errEl = document.getElementById("error")
+        const reposEl = document.getElementById("repos")
+        errEl.textContent = ""
+        reposEl.innerHTML = ""
+        if (!invoke) {
+          errEl.textContent = "Not running inside the Tauri webview — __TAURI__ bridge unavailable."
+          return
+        }
+        btn.disabled = true
+        meta.textContent = "Scanning..."
+        try {
+          const snap = await invoke("get_ecosystem_snapshot")
+          meta.textContent = `scan ${snap.scan.scan_id} — started ${snap.scan.started_at}, finished ${snap.scan.finished_at} — ${snap.repositories.length} repos, ${snap.local_processes.length} local processes`
+          for (const repo of snap.repositories) {
+            const div = document.createElement("div")
+            div.className = "repo"
+            const git = repo.git
+            div.innerHTML = `
+              <div class="repo-name">${repo.name} <span class="status-${repo.scan_status}">[${repo.scan_status}]</span></div>
+              <div>${repo.path}</div>
+              ${
+                git
+                  ? `<pre>branch: ${git.branch ?? "(unavailable)"}${git.is_detached ? " (detached)" : ""}
+head: ${git.head_sha ?? "(unavailable)"}
+dirty: ${git.is_dirty}${git.changed_paths.length ? "\n  " + git.changed_paths.join("\n  ") : ""}
+remotes: ${git.remotes.map((r) => r.name + " -> " + r.url).join(", ") || "(none)"}
+${git.unavailable.length ? "unavailable probes: " + git.unavailable.map((p) => p.probe + " (" + p.reason + ")").join(", ") : ""}</pre>`
+                  : `<pre>${repo.error ?? "(no git state)"}</pre>`
+              }
+            `
+            reposEl.appendChild(div)
+          }
+        } catch (e) {
+          errEl.textContent = "invoke failed: " + (e?.message ?? String(e))
+          meta.textContent = ""
+        } finally {
+          btn.disabled = false
+        }
+      }
+
+      document.getElementById("scan").addEventListener("click", runScan)
+    </script>
+  </body>
+</html>
