@@ -6,6 +6,13 @@
 //! isolated temp dir per test, never the real `$XDG_RUNTIME_DIR`, so
 //! these never race against each other or against a real agent's files.
 
+// This binary only uses `common::TempDir` - the git-fixture helpers
+// (`git`/`init_repo`/`commit_all`/etc.) are exercised by
+// `discover_tests.rs`'s own compilation of this same shared module.
+// Each `tests/*.rs` file compiles `tests/common/mod.rs` as its own
+// separate crate, so "unused" is genuinely per-binary here, not a sign
+// of real dead code in the shared module itself.
+#[allow(dead_code)]
 mod common;
 
 use ecosystem_observer::{
