@@ -217,13 +217,13 @@ async function smoke(prs: PR[], applied: number[]) {
 }
 
 async function checkout() {
-  console.log("Fetching latest v2 branch...")
-  await $`git fetch origin v2`
+  console.log("Fetching latest dev branch...")
+  await $`git fetch origin dev`
 
   console.log("Checking out beta branch...")
-  await $`git checkout -B beta origin/v2`
+  await $`git checkout -B beta origin/dev`
 
-  console.log("Installing v2 dependencies...")
+  console.log("Installing dev dependencies...")
   await $`bun install --frozen-lockfile`
 }
 
@@ -231,7 +231,7 @@ async function main() {
   console.log("Fetching open PRs with beta label...")
 
   const stdout =
-    await $`gh pr list --state open --draft=false --base v2 --label beta --json number,title,author,labels --limit 100`.text()
+    await $`gh pr list --state open --draft=false --base dev --label beta --json number,title,author,labels --limit 100`.text()
   const prs: PR[] = JSON.parse(stdout).sort((a: PR, b: PR) => a.number - b.number)
 
   console.log(`Found ${prs.length} open PRs with beta label`)
@@ -264,7 +264,7 @@ async function main() {
         if (!(await fix(pr, files, prs, applied, idx))) {
           await cleanup()
           failed.push({ number: pr.number, title: pr.title, reason: "Merge conflicts" })
-          await commentOnPR(pr.number, "Merge conflicts with v2 branch")
+          await commentOnPR(pr.number, "Merge conflicts with dev branch")
           continue
         }
       } else {
@@ -320,7 +320,7 @@ async function main() {
   await $`git fetch origin beta`
 
   const localTree = (await $`git rev-parse beta^{tree}`.text()).trim()
-  const remoteTrees = (await $`git log origin/v2..origin/beta --format=%T`.text()).split("\n")
+  const remoteTrees = (await $`git log origin/dev..origin/beta --format=%T`.text()).split("\n")
 
   const matchIdx = remoteTrees.indexOf(localTree)
   if (matchIdx !== -1) {
@@ -337,7 +337,7 @@ async function main() {
   await $`git fetch origin beta`
 
   const validatedTree = (await $`git rev-parse beta^{tree}`.text()).trim()
-  const remoteTreesAfterSmoke = (await $`git log origin/v2..origin/beta --format=%T`.text()).split("\n")
+  const remoteTreesAfterSmoke = (await $`git log origin/dev..origin/beta --format=%T`.text()).split("\n")
   const matchIdxAfterSmoke = remoteTreesAfterSmoke.indexOf(validatedTree)
   if (matchIdxAfterSmoke !== -1) {
     if (matchIdxAfterSmoke !== 0) {
