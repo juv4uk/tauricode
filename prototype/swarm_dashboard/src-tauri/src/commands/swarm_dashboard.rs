@@ -152,6 +152,59 @@ pub struct SwarmDashboardState {
     pub phonemes: Mutex<HashMap<String, PhonemeVectorData>>,
 }
 
+impl SwarmDashboardState {
+    /// Minimal placeholder seed data, deliberately NOT a full port of the
+    /// browser-mode fixtures (`../../fixtures.ts`, ~789 lines describing
+    /// all 6 real mesh nodes + Pāṇinian traces + phoneme table). This
+    /// exists only to prove the IPC wiring compiles and returns a real,
+    /// non-empty response through a real Tauri window — porting every
+    /// fixture value is a separate, larger increment, not silently
+    /// done here. One node, no traces, no phonemes: `get_swarm_topology`
+    /// has something real to return; `query_derivation_trace` and
+    /// `stream_phoneme_vector` correctly return their "not found" error
+    /// path against an empty map, which is itself a real, useful check
+    /// that the error path in these commands actually works end to end.
+    pub fn placeholder() -> Self {
+        let node = SwarmNode {
+            id: "node:my-lisp-1".to_string(),
+            name: "my-lisp-1".to_string(),
+            port: 9101,
+            role: "Core Lisp VM / Semantic Oracle / Knowledge Store".to_string(),
+            repo: "my-lisp".to_string(),
+            layer: "Layer 6 (VM & Runtime) / Layer 5 (Proof Engine)".to_string(),
+            status: NodeStatus::ONLINE,
+            latency_ms: 1.2,
+            completed_tasks: 82,
+            total_tasks: 82,
+            capabilities: vec!["eval".to_string(), "lisp".to_string(), "vm".to_string()],
+            endpoint: "tcp://127.0.0.1:9101".to_string(),
+            cpu_usage_pct: 14.5,
+            memory_mb: 128.4,
+            uptime_seconds: 864200,
+            last_heartbeat: "2026-08-21T09:29:58+03:00".to_string(),
+            version: "v0.9.4-p5".to_string(),
+            active_peers: vec![],
+        };
+
+        let topology = SwarmMeshTopology {
+            cluster_id: "swarm:mylisp-mesh-p5-alpha".to_string(),
+            cluster_name: "My-Lisp Autonomous Ecosystem Mesh".to_string(),
+            active_nodes_count: 1,
+            total_tasks_completed: 82,
+            mesh_health_pct: 100.0,
+            timestamp: "2026-08-21T09:30:00+03:00".to_string(),
+            nodes: vec![node],
+            connections: vec![],
+        };
+
+        Self {
+            topology: Mutex::new(topology),
+            traces: Mutex::new(HashMap::new()),
+            phonemes: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Tauri v2 Command Implementations
 // ----------------------------------------------------------------------------
