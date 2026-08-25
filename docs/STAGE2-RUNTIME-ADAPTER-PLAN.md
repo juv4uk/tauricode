@@ -272,16 +272,39 @@ honestly fill in from what it was actually given; `model`/`role`/
 a real value for it. Two new tests (task present / task absent), 29/29
 total.
 
-## M2.8 — dashboard/scheduler consumption — NOT ATTEMPTED
+## M2.8 — dashboard/scheduler consumption — RESCOPED, still not attempted
 
-Deliberately skipped this session. Concretely means modifying
-`ecosystem-scheduler`, an existing, separate, already-shipped crate —
-crossing into another crate's ownership is a bigger architectural
-commitment than adding files within `agent-runtime-contract` itself, and
-was not a call to make unilaterally while working solo without the
-owner's input on how that crate should actually consume this contract.
-Left genuinely open, not silently dropped — the natural next step once
-resumed.
+Originally deferred (see prior paragraph, kept below for the record):
+concretely meant modifying `ecosystem-scheduler`, an existing, separate,
+already-shipped crate — crossing into another crate's ownership without
+the owner's input on how it should consume this contract.
+
+**Circumstances changed after that deferral, same session (2026-08-25,
+owner working directly, not through an agent):** the owner himself
+landed `3eeabe449` (`feat: add Tauricode Windows Tauri build`) — a real,
+buildable `prototype/swarm_dashboard/src-tauri/` (`Cargo.toml`,
+`tauri.conf.json`, `main.rs`/`lib.rs`, currently a bare
+`tauri::Builder::default()`), plus `dae21bb36` closing the exact
+`publish.yml` `publish`-job upstream-gate gap this same investigation
+had found earlier but left unfixed (crossing into CI/release territory
+was correctly not this crate's call either), and two `beta.ts`
+robustness fixes for the fork's missing remote `beta` branch.
+
+This does not retroactively make M2.8-as-`ecosystem-scheduler`
+attempted — that specific target is still open, for the same reason as
+before. But it opens a **more concrete, better-scoped M2.8 target that
+didn't exist when this plan was written**: the already-designed
+`prototype/swarm_dashboard/tauri_ipc.rs` (real `#[tauri::command]`
+functions: `get_swarm_topology`, `query_derivation_trace`,
+`stream_phoneme_vector`) has never been registered into the new
+`main.rs`/`lib.rs` — the scaffold and the IPC design exist side by side,
+unconnected. Wiring `agent-runtime-contract`'s `AgentRuntimeAdapter`
+behind those commands (so the dashboard can actually launch/observe a
+real adapter through the real desktop shell, not just fixtures) is now
+a concrete, testable, in-crate-adjacent task — not a speculative
+cross-crate commitment. Still not attempted as of this update; recorded
+here as the corrected next target, not silently substituted for the
+original one.
 
 ## M2.9 — second adapter proof — DONE
 
@@ -310,3 +333,29 @@ mock (M2.4) and once against a real, independently-implemented subprocess
 adapter through the identical generic call site (M2.9). All work
 committed incrementally (one commit per increment) and pushed after each
 increment completed, per the owner's own instruction mid-session.
+
+## Revised next target: M2.10 — wire tauri_ipc.rs into the real shell
+
+Not started. Concrete, small, in-`prototype/swarm_dashboard`-scope steps,
+once resumed:
+
+1. Add `tauricode-swarm-dashboard`'s `Cargo.toml` dependency on
+   `agent-runtime-contract` (path dependency,
+   `../../../agent-runtime-contract`), with the `mock` feature at first
+   (never `opencode` inside a desktop app build without a fresh
+   preflight and explicit go-ahead, same discipline as M2.5).
+2. Move `tauri_ipc.rs`'s three `#[tauri::command]` functions from
+   `prototype/swarm_dashboard/` into `src-tauri/src/commands/` (the path
+   its own header comment already says they belong at) and register
+   them via `tauri::generate_handler!` in `lib.rs`'s `run()`.
+3. Back `get_swarm_topology`/`query_derivation_trace` with a `MockAdapter`
+   first (matching M2.4's own discipline: prove the wiring against a
+   mock before a real subprocess sits behind a GUI button), `State`
+   holding a `HandleRegistry`-backed adapter instance.
+4. Only after that's proven: swap in `OpenCodeAdapter` behind a feature
+   flag, with the same preflight/isolation rules M2.5 already
+   established.
+
+`ecosystem-scheduler` consumption remains a separate, still-open, still
+cross-crate decision — not resolved by this addition, not silently
+dropped either.
