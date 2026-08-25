@@ -227,6 +227,15 @@ async function checkout() {
   await $`bun install --frozen-lockfile`
 }
 
+async function hasRemoteBeta() {
+  const result = await $`git ls-remote --exit-code --heads origin beta`.quiet().nothrow()
+
+  if (result.exitCode === 0) return true
+  if (result.exitCode === 2) return false
+
+  throw new Error(`Failed to determine whether remote beta branch exists (exit ${result.exitCode})`)
+}
+
 async function main() {
   console.log("Fetching open PRs with beta label...")
 
@@ -317,37 +326,45 @@ async function main() {
   }
 
   console.log("\nChecking if beta branch has changes...")
-  await $`git fetch origin beta`
+  if (await hasRemoteBeta()) {
+    await $`git fetch origin beta`
 
-  const localTree = (await $`git rev-parse beta^{tree}`.text()).trim()
-  const remoteTrees = (await $`git log origin/dev..origin/beta --format=%T`.text()).split("\n")
+    const localTree = (await $`git rev-parse beta^{tree}`.text()).trim()
+    const remoteTrees = (await $`git log origin/dev..origin/beta --format=%T`.text()).split("\n")
 
-  const matchIdx = remoteTrees.indexOf(localTree)
-  if (matchIdx !== -1) {
-    if (matchIdx !== 0) {
-      console.log(`Beta branch contains this sync, but additional commits exist after it. Leaving beta branch as is.`)
-    } else {
-      console.log("Beta branch has identical contents, no push needed")
+    const matchIdx = remoteTrees.indexOf(localTree)
+    if (matchIdx !== -1) {
+      if (matchIdx !== 0) {
+        console.log(`Beta branch contains this sync, but additional commits exist after it. Leaving beta branch as is.`)
+      } else {
+        console.log("Beta branch has identical contents, no push needed")
+      }
+      return
     }
-    return
+  } else {
+    console.log("Remote beta branch does not exist; bootstrapping it after validation.")
   }
 
   if (!(await smoke(prs, applied))) throw new Error("Final smoke check failed")
 
-  await $`git fetch origin beta`
+  if (await hasRemoteBeta()) {
+    await $`git fetch origin beta`
 
-  const validatedTree = (await $`git rev-parse beta^{tree}`.text()).trim()
-  const remoteTreesAfterSmoke = (await $`git log origin/dev..origin/beta --format=%T`.text()).split("\n")
-  const matchIdxAfterSmoke = remoteTreesAfterSmoke.indexOf(validatedTree)
-  if (matchIdxAfterSmoke !== -1) {
-    if (matchIdxAfterSmoke !== 0) {
-      console.log(
-        `Beta branch contains this validated sync, but additional commits exist after it. Leaving beta branch as is.`,
-      )
-    } else {
-      console.log("Validated beta branch now matches remote contents, no push needed")
+    const validatedTree = (await $`git rev-parse beta^{tree}`.text()).trim()
+    const remoteTreesAfterSmoke = (await $`git log origin/dev..origin/beta --format=%T`.text()).split("\n")
+    const matchIdxAfterSmoke = remoteTreesAfterSmoke.indexOf(validatedTree)
+    if (matchIdxAfterSmoke !== -1) {
+      if (matchIdxAfterSmoke !== 0) {
+        console.log(
+          `Beta branch contains this validated sync, but additional commits exist after it. Leaving beta branch as is.`,
+        )
+      } else {
+        console.log("Validated beta branch now matches remote contents, no push needed")
+      }
+      return
     }
-    return
+  } else {
+    console.log("Remote beta branch is still absent; pushing the validated bootstrap branch.")
   }
 
   console.log("Force pushing validated beta branch...")
