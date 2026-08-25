@@ -13,7 +13,7 @@ and emits a per-agent routing plan.
 
 ## What it deliberately does NOT do
 
-No claiming, no mesh writes, no repo mutations. Dispatch *execution* stays
+No claiming, no mesh writes, no repo mutations. Dispatch _execution_ stays
 with agents via swarm-node's quorum-guarded `(claim-task ...)`; this tool
 produces the routing PLAN only — merging it into the claim path would
 duplicate authority that M1.1 assigns elsewhere.
@@ -31,12 +31,12 @@ ecosystem-scheduler --repo ~/GitHub/cml --repo ~/GitHub/my-lisp --origin cml
 
 Readiness labels are honest about what they cannot resolve:
 
-| Label | Meaning |
-|---|---|
-| `ready` | open, all deps exist and are done |
-| `waiting-on <id>` | queued behind an open task |
+| Label              | Meaning                             |
+| ------------------ | ----------------------------------- |
+| `ready`            | open, all deps exist and are done   |
+| `waiting-on <id>`  | queued behind an open task          |
 | `missing-dep <id>` | depends on an id defined in no repo |
-| `cycle` | blocked behind a dependency cycle |
+| `cycle`            | blocked behind a dependency cycle   |
 
 Duplicate task ids across repos are surfaced as warnings, never silently
 deduplicated (first input occurrence keeps the seat, deterministically by

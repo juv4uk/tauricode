@@ -56,7 +56,7 @@ Standalone crate (no workspace `Cargo.toml` exists in this repo — matches
 runtime dependencies beyond what a contract crate needs. Lives separately
 from `ecosystem-observer` because the audits established these are
 different concerns: `ecosystem-observer` is OS/git observation of
-*existing* processes; `agent-runtime-contract` is the *adapter* boundary
+_existing_ processes; `agent-runtime-contract` is the _adapter_ boundary
 for runtimes Tauricode itself launches and controls. Conflating them would
 re-introduce exactly the coupling the audits spent effort ruling out.
 
@@ -72,14 +72,14 @@ re-introduce exactly the coupling the audits spent effort ruling out.
 - **public contract change:** none yet (new crate, nothing depends on it).
 - **implementation steps:** 1) create crate skeleton; 2) define
   `RuntimeHandle(String)` (opaque wrapper, no runtime-specific fields —
-  audit finding: "runtime handle must be opaque"); 3) reuse the *shape*
+  audit finding: "runtime handle must be opaque"); 3) reuse the _shape_
   already proven in `ecosystem-observer::SelfReportedIdentity` for
   `Identity`/`Capabilities` fields (`model, role, repository, instance,
-  task, declared_capabilities`) rather than inventing a new shape — the
+task, declared_capabilities`) rather than inventing a new shape — the
   audit found this shape already generic; 4) define `Status` as the
   existing `IdentityStatus{Fresh,Stale,Orphaned,NotFound}` enum, imported
   by value/re-derived, not silently diverged; 5) define `Workspace{cwd,
-  repo_association}` matching `OsObservedFacts`' proven fields.
+repo_association}` matching `OsObservedFacts`' proven fields.
 - **tests:** unit tests only — construction, `Debug`/`Clone`/equality
   where relevant. No behavior to test yet.
 - **evidence required:** `cargo build -p agent-runtime-contract` and
@@ -104,7 +104,7 @@ re-introduce exactly the coupling the audits spent effort ruling out.
   still no adapter trait, no real process.
 - **implementation steps:** 1) define `LifecycleState`; 2) define
   `HandleRegistry` as a plain in-memory `HashMap<RuntimeHandle,
-  LifecycleState>` with `register/transition/get` methods; 3) enforce
+LifecycleState>` with `register/transition/get` methods; 3) enforce
   legal transitions only (`Launching -> Running`, `Running -> Stopped`,
   reject others) — return a typed error, never silently allow an invalid
   transition (matches root policy's "never hide unknown/failure").
@@ -132,7 +132,7 @@ re-introduce exactly the coupling the audits spent effort ruling out.
   with exactly the 8 audited variants, each carrying only the fields the
   audit justified (`task_bound{handle_id, task_id, origin}`,
   `tool_started/completed{handle_id, task_id?, tool_name: String
-  (opaque), status}` — no `tool_failed` variant, folded into
+(opaque), status}` — no `tool_failed` variant, folded into
   `tool_completed.status`, per the audit's explicit anti-proliferation
   finding); 3) add serde round-trip tests.
 - **tests:** serialize/deserialize round-trip for every variant;
@@ -164,11 +164,11 @@ re-introduce exactly the coupling the audits spent effort ruling out.
   iterator-of-events shape, kept abstract — no async runtime dependency
   decision forced at this layer). Plus a separate `capability flags`
   trait or const fn (`supports_live_attach() -> bool`, `supports_resume()
-  -> bool`) per the audit's explicit instruction not to fake a common
+-> bool`) per the audit's explicit instruction not to fake a common
   attach/resume API.
 - **implementation steps:** 1) write the trait exactly as audited, no
   extra methods; 2) write `AdapterError` as a small enum (`LaunchFailed,
-  NotFound, Unsupported, Io(String)`); 3) document on the trait itself,
+NotFound, Unsupported, Io(String)`); 3) document on the trait itself,
   in one line per method, which audit finding justifies it (traceability
   back to the audits, not just to this plan).
 - **tests:** none yet possible (no implementation) beyond "trait compiles
@@ -196,8 +196,7 @@ re-introduce exactly the coupling the audits spent effort ruling out.
   without becoming default production surface).
 - **public contract change:** adds `MockAdapter`, no change to the trait.
 - **implementation steps:** 1) `MockAdapter` holds an in-memory
-  `HandleRegistry` (from M2.1) plus a scripted event queue per handle;
-  2) implement all 7 trait methods purely in-memory, no subprocess, no
+  `HandleRegistry` (from M2.1) plus a scripted event queue per handle; 2) implement all 7 trait methods purely in-memory, no subprocess, no
   I/O; 3) `launch` synthesizes a `RuntimeHandle`, transitions
   `Launching -> Running`, and can be configured (test-only) to emit a
   scripted `Vec<Event>` from `events()`.

@@ -5,7 +5,7 @@
 **Status:** `APPROVED ARCHITECTURAL RFC / PROTOTYPE DELIVERABLE`  
 **Epistemic Layer:** Layer 6 (Engineering / Desktop Shell, IPC & Real-Time Telemetry)  
 **Target Systems:** [`tauricode`](file:///home/agents/GitHub/tauricode), [`my-idea`](file:///home/agents/GitHub/my-idea), [`my-lisp`](file:///home/agents/GitHub/my-lisp), [`my-lisp-panini`](file:///home/agents/GitHub/my-lisp-panini), [`shiva-sutras`](file:///home/agents/GitHub/shiva-sutras), [`cml`](file:///home/agents/GitHub/cml), [`fpga-lisp`](file:///home/agents/GitHub/fpga-lisp)  
-**Prototype Reference:** `prototype/swarm_dashboard/` (`types.ts`, `tauri_ipc.rs`, `tauri_ipc.ts`, `fixtures.ts`, `SwarmDashboardApp.tsx`, `index.html`, `test_swarm_dashboard.mjs`, `README.md`)  
+**Prototype Reference:** `prototype/swarm_dashboard/` (`types.ts`, `tauri_ipc.rs`, `tauri_ipc.ts`, `fixtures.ts`, `SwarmDashboardApp.tsx`, `index.html`, `test_swarm_dashboard.mjs`, `README.md`)
 
 ---
 
@@ -18,7 +18,7 @@ As the My-Lisp ecosystem advances toward the **P5 Gate Review**, the desktop run
 2. **High-Throughput Tauri v2 IPC Architecture:**
    Zero-copy, type-safe Rust-to-Frontend communication for live state snapshotting, derivation DAG streaming, and phoneme vector inspection.
 3. **Interactive Pāṇinian Derivation Proof Graph Streamer:**
-   Step-by-step playback, AST term morphology diffing, Paribhāṣā 5-tier conflict resolution visualization (*Apavāda > Utsarga*, *Nitya > Anitya*, etc.), and client-side **SHA-256 state proof verification** (ECA-007 compliant).
+   Step-by-step playback, AST term morphology diffing, Paribhāṣā 5-tier conflict resolution visualization (_Apavāda > Utsarga_, _Nitya > Anitya_, etc.), and client-side **SHA-256 state proof verification** (ECA-007 compliant).
 4. **Hardware-Software Phonetic Workbench:**
    Real-time inspection of 16-bit **PVC-16** feature vectors, Sūtra 1.1.9 **Savarṇa homogeneity testing** (1-cycle ALU execution), 64-bit **Pratyāhāra ALU set operations**, and Ukrainian softened consonant palatalization extensions.
 
@@ -64,14 +64,14 @@ graph TD
 
 ### Node Specialization Matrix
 
-| Node | Port | Repo | Primary Epistemic Layer | Capabilities | Completed Tasks |
-|---|---|---|---|---|---|
-| `my-lisp-1` | `9101` | `my-lisp` | Layer 6 (VM) / Layer 5 (Proof Engine) | `eval`, `lisp`, `vm`, `ast`, `proof`, `oracle` | 82 |
-| `fpga-lisp-1` | `9102` | `fpga-lisp` | Layer 6 (Hardware Synthesis & RTL) | `verilog`, `fpga`, `alu`, `pvc16-alu`, `pratyahara-rom` | 38 |
-| `cml-1` | `9103` | `cml` | Layer 6 (Compiler & Hardware Co-Design) | `compiler`, `rust`, `lowering`, `constant-folding`, `c99` | 44 |
-| `my-idea-1` | `9104` | `my-idea` | Layer 6 (Workbench & Developer Tooling) | `ide`, `visualizer`, `clojurescript`, `codemirror`, `dag` | 41 |
-| `my-lisp-panini-1` | `9106` | `my-lisp-panini` | Layer 2 (Grammar) / Layer 5 (Proofs) | `grammar`, `panini`, `derivation`, `proof-graph`, `ir` | 46 |
-| `shiva-sutras-1` | `9107` | `shiva-sutras` | Layer 1 (Canon) / Layer 6 (Codecs) | `phonetics`, `shiva`, `upc8`, `canon`, `slavic` | 47 |
+| Node               | Port   | Repo             | Primary Epistemic Layer                 | Capabilities                                              | Completed Tasks |
+| ------------------ | ------ | ---------------- | --------------------------------------- | --------------------------------------------------------- | --------------- |
+| `my-lisp-1`        | `9101` | `my-lisp`        | Layer 6 (VM) / Layer 5 (Proof Engine)   | `eval`, `lisp`, `vm`, `ast`, `proof`, `oracle`            | 82              |
+| `fpga-lisp-1`      | `9102` | `fpga-lisp`      | Layer 6 (Hardware Synthesis & RTL)      | `verilog`, `fpga`, `alu`, `pvc16-alu`, `pratyahara-rom`   | 38              |
+| `cml-1`            | `9103` | `cml`            | Layer 6 (Compiler & Hardware Co-Design) | `compiler`, `rust`, `lowering`, `constant-folding`, `c99` | 44              |
+| `my-idea-1`        | `9104` | `my-idea`        | Layer 6 (Workbench & Developer Tooling) | `ide`, `visualizer`, `clojurescript`, `codemirror`, `dag` | 41              |
+| `my-lisp-panini-1` | `9106` | `my-lisp-panini` | Layer 2 (Grammar) / Layer 5 (Proofs)    | `grammar`, `panini`, `derivation`, `proof-graph`, `ir`    | 46              |
+| `shiva-sutras-1`   | `9107` | `shiva-sutras`   | Layer 1 (Canon) / Layer 6 (Codecs)      | `phonetics`, `shiva`, `upc8`, `canon`, `slavic`           | 47              |
 
 **Total Mesh Completed Tasks:** **298** (100% completion rate across active task boards).
 
@@ -82,7 +82,9 @@ graph TD
 To achieve high-frequency telemetry updates without garbage collection overhead or main-thread blocking, TauriCode implements three primary IPC command primitives:
 
 ### 1. `get_swarm_topology`
+
 Returns a point-in-time snapshot of the active cluster topology, including node status, peer latencies, memory footprint, CPU utilization, and aggregated task statistics:
+
 ```rust
 #[tauri::command]
 pub async fn get_swarm_topology(
@@ -91,7 +93,9 @@ pub async fn get_swarm_topology(
 ```
 
 ### 2. `query_derivation_trace`
+
 Fetches the immutable Directed Semantic Proof Graph (DAG) for a given word derivation (e.g., `bhavati`, `dadāti`), including all intermediate states, AST term representations, applied sūtras, and Paribhāṣā conflict resolutions:
+
 ```rust
 #[tauri::command]
 pub async fn query_derivation_trace(
@@ -101,7 +105,9 @@ pub async fn query_derivation_trace(
 ```
 
 ### 3. `stream_phoneme_vector`
+
 Emits real-time articulatory data, 16-bit PVC-16 feature vectors, and 64-bit Pratyāhāra bitmasks for any target phoneme or UPC-8 byte code:
+
 ```rust
 #[tauri::command]
 pub async fn stream_phoneme_vector(
@@ -146,24 +152,28 @@ Grammatical derivation in the Pāṇinian model is non-linear and mathematically
 ```
 
 ### Conflict Resolution in `dadāti`:
-When deriving `dadāti` (root √dā, 3rd class *Juhotyādi*), both general rule 3.1.68 (*kartari śap*) and special exception 2.4.75 (*juhotyādibhyaḥ śluḥ*) are simultaneously applicable. The dashboard visualizer highlights the **Apavāda > Utsarga** principle blocking rule 3.1.68 and triggering reduplication (*ślau* 6.1.10 $\to$ *hrasvaḥ* 7.4.59 $\to$ `dadāti`).
+
+When deriving `dadāti` (root √dā, 3rd class _Juhotyādi_), both general rule 3.1.68 (_kartari śap_) and special exception 2.4.75 (_juhotyādibhyaḥ śluḥ_) are simultaneously applicable. The dashboard visualizer highlights the **Apavāda > Utsarga** principle blocking rule 3.1.68 and triggering reduplication (_ślau_ 6.1.10 $\to$ _hrasvaḥ_ 7.4.59 $\to$ `dadāti`).
 
 ---
 
 ## 5. Phonetic Workbench: PVC-16 & 64-Bit Pratyāhāra ALU
 
 ### 5.1. 16-Bit PVC-16 Articulatory Vector
+
 ```
  15  14  13  12 │ 11  10   9   8 │  7   6   5   4 │  3   2   1   0
 ┌───┬───┬───┬───┼───┬───┬───┬───┼───┬───┬───┬───┼───┬───┬───┬───┐
 │Mod│Pal│Len│Len│Gh │Mh │Sp │Asp│Ka │Ta │Mu │Da │Os │Na │Pl │Vow│
 └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘
 ```
+
 - **Single-Cycle Sūtra 1.1.9 Savarṇa Test:**
   $$\text{is\_savarna} = ((A \ \& \ \text{0x003E}) == (B \ \& \ \text{0x003E})) \ \&\& \ ((A \ \& \ \text{0x0041}) == (B \ \& \ \text{0x0041}))$$
 - **Ukrainian Phonetic Support:** Bit 14 (`MOD_PALATALIZED`) encodes soft dental consonants (`[т']`, `[д']`, `[н']`, `[с']`) and iotated vowel extensions.
 
 ### 5.2. 64-Bit Pratyāhāra Bitmask Engine
+
 - 42 canonical sounds map to bits $0 \dots 41$.
 - Membership queries `(member? char 'pratyahara)` execute in **1 CPU cycle (~0.3 ns)** or **1 FPGA LUT cycle** via `(sound_mask & PRATYAHARA_MASK) != 0`.
 
@@ -171,21 +181,21 @@ When deriving `dadāti` (root √dā, 3rd class *Juhotyādi*), both general rule
 
 ## 6. Implementation Summary & Delivered Artifacts
 
-| Component / Artifact | File Path | Status | Verification |
-|---|---|---|---|
-| **Type Definitions** | `types.ts` | Complete | Full TypeScript coverage for topology, DAG, and phonetics |
-| **Rust IPC Commands** | `tauri_ipc.rs` | Complete | Tauri v2 command handlers & state registry |
-| **TS IPC Client** | `tauri_ipc.ts` | Complete | Native Tauri invoke + browser fallback simulation |
-| **Fixtures & Data** | `fixtures.ts` | Complete | 6 nodes, 298 tasks, canonical bhavati/dadati DAGs |
-| **Swarm Canvas** | `SwarmMeshGraph.tsx` | Complete | Animated P2P mesh network topology |
-| **Node Health Grid** | `NodeHealthMatrix.tsx` | Complete | Real-time metrics across ports 9101-9107 |
-| **Task Telemetry** | `TaskCompletionTelemetry.tsx` | Complete | 298+ tasks, capability breakdown, audit log |
-| **DAG Streamer** | `DerivationDagStreamer.tsx` | Complete | Interactive step player with SHA-256 verification |
-| **Phonetics Lab** | `PhoneticInspector.tsx` | Complete | PVC-16 bit toggle & Sūtra 1.1.9 Savarṇa calculator |
-| **App Master Container** | `SwarmDashboardApp.tsx` | Complete | Integrated multi-tab workbench shell |
-| **Standalone Browser Demo** | `index.html` | Complete | Zero-dependency responsive dark telemetry UI |
-| **Automated Test Suite** | `test_swarm_dashboard.mjs` | Complete | 100% pass across topology, tasks, and phonetic ALU |
-| **Documentation** | `README.md` | Complete | Full architecture & execution guide |
+| Component / Artifact        | File Path                     | Status   | Verification                                              |
+| --------------------------- | ----------------------------- | -------- | --------------------------------------------------------- |
+| **Type Definitions**        | `types.ts`                    | Complete | Full TypeScript coverage for topology, DAG, and phonetics |
+| **Rust IPC Commands**       | `tauri_ipc.rs`                | Complete | Tauri v2 command handlers & state registry                |
+| **TS IPC Client**           | `tauri_ipc.ts`                | Complete | Native Tauri invoke + browser fallback simulation         |
+| **Fixtures & Data**         | `fixtures.ts`                 | Complete | 6 nodes, 298 tasks, canonical bhavati/dadati DAGs         |
+| **Swarm Canvas**            | `SwarmMeshGraph.tsx`          | Complete | Animated P2P mesh network topology                        |
+| **Node Health Grid**        | `NodeHealthMatrix.tsx`        | Complete | Real-time metrics across ports 9101-9107                  |
+| **Task Telemetry**          | `TaskCompletionTelemetry.tsx` | Complete | 298+ tasks, capability breakdown, audit log               |
+| **DAG Streamer**            | `DerivationDagStreamer.tsx`   | Complete | Interactive step player with SHA-256 verification         |
+| **Phonetics Lab**           | `PhoneticInspector.tsx`       | Complete | PVC-16 bit toggle & Sūtra 1.1.9 Savarṇa calculator        |
+| **App Master Container**    | `SwarmDashboardApp.tsx`       | Complete | Integrated multi-tab workbench shell                      |
+| **Standalone Browser Demo** | `index.html`                  | Complete | Zero-dependency responsive dark telemetry UI              |
+| **Automated Test Suite**    | `test_swarm_dashboard.mjs`    | Complete | 100% pass across topology, tasks, and phonetic ALU        |
+| **Documentation**           | `README.md`                   | Complete | Full architecture & execution guide                       |
 
 ---
 
