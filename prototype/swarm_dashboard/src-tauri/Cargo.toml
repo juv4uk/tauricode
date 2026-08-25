@@ -1,0 +1,17 @@
+[package]
+name = "tauricode-swarm-dashboard"
+version = "0.1.0"
+description = "Tauricode Swarm Dashboard desktop shell"
+authors = ["Tauricode contributors"]
+edition = "2021"
+build = "build.rs"
+
+[lib]
+name = "tauricode_swarm_dashboard_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
