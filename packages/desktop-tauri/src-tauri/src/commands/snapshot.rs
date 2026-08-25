@@ -17,8 +17,16 @@ use std::path::PathBuf;
 /// Stage 1's declared observation scope
 /// (ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER: "Scope of
 /// observation") - tauricode does not observe itself here, it observes
-/// its six siblings.
-const ECOSYSTEM_REPOS: [&str; 6] = [
+/// its six siblings. Only the *fallback*: this crate's own Cargo.toml
+/// stays hardcoded to this ecosystem, but the command layer must not be
+/// — see `ecosystem_repos()` below, added after a real portability gap
+/// was found (2026-08-25): this list was a `const` (recompile required
+/// to point at a different repo set), while `ecosystem_root()` was
+/// already an overridable env var. `ecosystem-observer` itself was
+/// always repo-agnostic (`root`/`repositories` are `DiscoverInput`
+/// fields, never baked into the crate) — this was a gap in this
+/// package's own command layer, not in the observer core.
+const DEFAULT_ECOSYSTEM_REPOS: [&str; 6] = [
     "my-lisp",
     "fpga-lisp",
     "cml",
@@ -28,7 +36,7 @@ const ECOSYSTEM_REPOS: [&str; 6] = [
 ];
 
 /// `ECOSYSTEM_ROOT` env var overrides the parent directory containing all
-/// six sibling repos; falls back to `/home/agents/GitHub`, the path every
+/// sibling repos; falls back to `/home/agents/GitHub`, the path every
 /// agent-facing doc in this ecosystem already assumes as the standard
 /// checkout location (this session's own root `CLAUDE.md`: "every agent
 /// working anywhere in `/home/agents/GitHub/*`"). Not a guess — an
@@ -43,15 +51,39 @@ fn ecosystem_root() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from("/home/agents/GitHub"))
 }
 
-/// IPC Command: one real, live `EcosystemSnapshot` scan of the six
-/// ecosystem sibling repos. Read-only — matches Stage 1's own explicit
+/// `ECOSYSTEM_REPOS` env var (comma-separated, e.g.
+/// `ECOSYSTEM_REPOS=repo-a,repo-b,repo-c`) overrides which subdirectories
+/// of `ecosystem_root()` get scanned; falls back to this ecosystem's own
+/// six repos. Empty entries from stray commas/whitespace are dropped
+/// rather than passed through as a bogus repo name.
+fn ecosystem_repos() -> Vec<String> {
+    match std::env::var("ECOSYSTEM_REPOS") {
+        Ok(raw) => {
+            let repos: Vec<String> = raw
+                .split(',')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(String::from)
+                .collect();
+            if repos.is_empty() {
+                DEFAULT_ECOSYSTEM_REPOS.iter().map(|s| s.to_string()).collect()
+            } else {
+                repos
+            }
+        }
+        Err(_) => DEFAULT_ECOSYSTEM_REPOS.iter().map(|s| s.to_string()).collect(),
+    }
+}
+
+/// IPC Command: one real, live `EcosystemSnapshot` scan of the
+/// configured sibling repos. Read-only — matches Stage 1's own explicit
 /// non-goals (no launch, no git mutation, no claim/release, no Guix
 /// mutation, no contract/evidence edit).
 #[tauri::command]
 pub async fn get_ecosystem_snapshot() -> Result<EcosystemSnapshot, String> {
     let input = DiscoverInput {
         root: ecosystem_root(),
-        repositories: Some(ECOSYSTEM_REPOS.iter().map(|s| s.to_string()).collect()),
+        repositories: Some(ecosystem_repos()),
         identity_base_dir: None,
     };
     Ok(discover_ecosystem(input))

@@ -11,6 +11,42 @@ continuation of this one.
 **Decision:** `ECO-DECISION-2026-08-19-TAURICODE-ROLE` / `ECO-DECISION-2026-08-19-TAURICODE-STAGE1-OBSERVER` / `ECO-DECISION-2026-08-19-TAURICODE-TAURI-ARCHITECTURE` (all ACCEPTED, `/home/agents/ecosystem/decisions/`).
 **Not to be confused with:** `prototype/swarm_dashboard/` — an unrelated, mock-data-driven prototype (see its own README's boundary note). This package is the real one: everything it displays comes from a live scan, never a fixture.
 
+## Portability — three separately-evidenced claim levels
+
+Don't let the words "portable architecture" get ahead of what's
+actually proven. As of 2026-08-25:
+
+```
+NOW    core is portable        — ecosystem-observer::discover_ecosystem
+                                  takes root/repositories as call
+                                  parameters, never hardcodes them
+                                  (source-confirmed); AgentRuntimeAdapter
+                                  is runtime-agnostic, proven twice
+                                  (MockAdapter + real OpenCodeAdapter
+                                  through one identical generic call
+                                  site, M2.9).
+
+NEXT   observer desktop is     — this package's command layer no
+       configurable              longer hardcodes the repo list either
+                                  (ECOSYSTEM_REPOS env var, comma-
+                                  separated, same pattern as
+                                  ECOSYSTEM_ROOT). Both env vars
+                                  verified with 4 unit-test scenarios
+                                  (default/custom/empty/stray-commas)
+                                  in an isolated scratch crate before
+                                  landing here.
+
+LATER  whole agent ecosystem   — NOT attempted. Needs: contracts/tasks/
+       is portable                evidence reading (ecosystem-observer
+                                  itself still says this is "out of
+                                  scope"), a real fresh-repo-set
+                                  end-to-end test with zero
+                                  my-lisp-specific patches, and
+                                  packages/app UI integration. Do not
+                                  claim this level until that
+                                  experiment actually runs.
+```
+
 ## What this slice actually does
 
 One Tauri command, `get_ecosystem_snapshot`, calls
