@@ -333,28 +333,36 @@ adapter through the identical generic call site (M2.9). All work
 committed incrementally (one commit per increment) and pushed after each
 increment completed, per the owner's own instruction mid-session.
 
-## Revised next target: M2.10 — wire tauri_ipc.rs into the real shell
+## M2.10 — wire tauri_ipc.rs into the real shell — DONE, CI-VERIFIED GREEN
 
-Not started. Concrete, small, in-`prototype/swarm_dashboard`-scope steps,
-once resumed:
+Step 2 (move the three `#[tauri::command]` functions into
+`src-tauri/src/commands/swarm_dashboard.rs`, register via
+`tauri::generate_handler!`) done — commit `eb52d0419`. Steps 1/3/4
+(`agent-runtime-contract` wiring via `MockAdapter`/`OpenCodeAdapter`)
+deliberately NOT done: that commit's own message corrects this plan's
+earlier overstatement — `get_swarm_topology`/`query_derivation_trace`/
+`stream_phoneme_vector` are swarm-mesh-topology and Pāṇinian-derivation
+domain, not agent-runtime-lifecycle domain; forcing `agent-runtime-contract`
+behind them would have been an artificial connection, not a real one.
+`SwarmDashboardState::placeholder()` (one real node, empty
+traces/phonemes — proves both the happy path and the "not found" error
+path) stands in its place.
 
-1. Add `tauricode-swarm-dashboard`'s `Cargo.toml` dependency on
-   `agent-runtime-contract` (path dependency,
-   `../../../agent-runtime-contract`), with the `mock` feature at first
-   (never `opencode` inside a desktop app build without a fresh
-   preflight and explicit go-ahead, same discipline as M2.5).
-2. Move `tauri_ipc.rs`'s three `#[tauri::command]` functions from
-   `prototype/swarm_dashboard/` into `src-tauri/src/commands/` (the path
-   its own header comment already says they belong at) and register
-   them via `tauri::generate_handler!` in `lib.rs`'s `run()`.
-3. Back `get_swarm_topology`/`query_derivation_trace` with a `MockAdapter`
-   first (matching M2.4's own discipline: prove the wiring against a
-   mock before a real subprocess sits behind a GUI button), `State`
-   holding a `HandleRegistry`-backed adapter instance.
-4. Only after that's proven: swap in `OpenCodeAdapter` behind a feature
-   flag, with the same preflight/isolation rules M2.5 already
-   established.
+**Real, CI-verified end-to-end result, not a claim:** the Windows build
+was broken in 4 more ways once actually compiled against a real
+toolchain (this WSL environment has no `pkg-config`/`glib`, so none of
+this was locally checkable — every one of these was found from a real
+`gh run view --repo juv4uk/tauricode --log-failed`, one commit +
+`workflow_dispatch` re-run at a time, never predicted ahead of
+evidence):
+
+1. `bun install --frozen-lockfile=false` — invalid flag syntax (`fix(ci)`, `c64689d9f`)
+2. `frontendDist: ".."` captured `src-tauri`/`node_modules` — isolated a `web/` folder (`a524fc6d9`)
+3. `icons/icon.ico` missing (tauri-build's Windows Resource requirement) — generated a real 6-resolution ICO via Pillow (`a2af6ac64`)
+4. `register_swarm_commands<R: tauri::Runtime>()` generic vs. `stream_phoneme_vector`'s concrete `AppHandle` — real `E0277` rustc error, fixed by dropping the unneeded genericity (`f1332fea2`)
+5. `bundle.icon` unset — WiX couldn't find an icon separately from the Resource-file one — wired the existing `icon.ico` into the config key the bundler actually reads (`284884884`)
+
+**Run [`32855223160`](https://github.com/juv4uk/tauricode/actions/runs/32855223160): ✓ green, 5m35s, artifact `tauricode-windows` (MSI + NSIS) uploaded.** First real, working Tauri build for tauricode.
 
 `ecosystem-scheduler` consumption remains a separate, still-open, still
-cross-crate decision — not resolved by this addition, not silently
-dropped either.
+cross-crate decision — not resolved by this, not silently dropped either.
