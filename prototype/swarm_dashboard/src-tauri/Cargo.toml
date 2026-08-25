@@ -16,3 +16,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
+# "mock" only, not "opencode" - the dashboard panel shows adapter status
+# via MockAdapter; wiring a real subprocess-spawning adapter into a GUI
+# button is a separate, bigger decision than exposing the status shape.
+agent-runtime-contract = { path = "../../../crates/agent-runtime-contract", features = ["mock"] }

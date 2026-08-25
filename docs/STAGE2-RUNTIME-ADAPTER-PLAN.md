@@ -271,7 +271,40 @@ honestly fill in from what it was actually given; `model`/`role`/
 a real value for it. Two new tests (task present / task absent), 29/29
 total.
 
-## M2.8 — dashboard/scheduler consumption — RESCOPED, still not attempted
+## M2.8 — dashboard/scheduler consumption — RESCOPED TWICE, DONE (2nd rescope)
+
+**Second rescope (2026-08-25, later same day):** the target recorded
+below (wiring `AgentRuntimeAdapter` behind `get_swarm_topology`/
+`query_derivation_trace`/`stream_phoneme_vector`) was itself found
+wrong before being attempted: those three commands are swarm-mesh-
+topology/Pāṇinian-derivation/phoneme-vector domain, `AgentRuntimeAdapter`
+is process-lifecycle domain (launch/stop/status/identity/capabilities/
+workspace) — no natural connection point, confirmed by reading both
+sides' actual signatures rather than assumed. Owner decision (asked
+directly, not guessed): reformulate M2.8 as its own panel instead of
+forcing the connection.
+
+**Done as:** `prototype/swarm_dashboard/src-tauri/src/commands/agent_runtime.rs`
+— a new, separate Tauri state (`AgentRuntimePanelState`) and three IPC
+commands (`list_agent_runtimes`, `launch_agent_runtime`,
+`stop_agent_runtime`) backed by `agent-runtime-contract::MockAdapter`
+(the crate's "mock" feature — not "opencode": launching a real
+subprocess from a GUI button is a separate, bigger decision than
+exposing the status shape). Registered alongside the existing swarm
+commands in one `tauri::generate_handler!` call in `lib.rs`
+(`register_swarm_commands()` from M2.10 left untouched/unused — no
+reason to disturb an already-CI-verified-green code path for this).
+Type-correctness verified against the real, unmodified
+`AgentRuntimeAdapter` trait and `agent-runtime-contract` itself
+`cargo check`s clean with `--features mock`; the full Tauri build
+(needs pkg-config/libglib2.0-dev, unavailable in this session's
+sandbox) is CI's job, same verification-boundary note as M2.8's data
+sibling. No frontend wiring yet — this is the backend IPC surface
+only, same honest scoping as `full_fixtures()`.
+
+---
+
+### First rescope (superseded by the above, kept for the record)
 
 Originally deferred (see prior paragraph, kept below for the record):
 concretely meant modifying `ecosystem-scheduler`, an existing, separate,
