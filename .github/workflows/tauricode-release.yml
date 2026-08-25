@@ -131,9 +131,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # `dist/*/*` is only two levels deep - console artifacts nest a
+          # full crate-relative path (dist/linux-console/swarm-cli/target/
+          # release/swarm-cli), so that glob matched a directory
+          # ("swarm-cli") and gh failed with "is a directory". A NUL-safe
+          # array of real files (not `$(find ...)`, unquoted word-splitting
+          # would break on the Windows bundle names, which contain spaces)
+          # is the actual fix - confirmed by a real CI failure, not
+          # predicted.
+          mapfile -d '' -t assets < <(find dist -type f -print0)
           gh release create "${{ steps.tag.outputs.tag }}" \
             --title "Tauricode ${{ steps.tag.outputs.tag }}" \
             --notes "Automated release build: Windows/Linux desktop + console. See individual job logs for which targets actually succeeded - this step attaches whatever artifacts were produced, never claims a target that didn't run." \
             --repo "${{ github.repository }}" \
-            dist/*/* || \
-          gh release upload "${{ steps.tag.outputs.tag }}" dist/*/* --repo "${{ github.repository }}" --clobber
+            "${assets[@]}" || \
+          gh release upload "${{ steps.tag.outputs.tag }}" "${assets[@]}" --repo "${{ github.repository }}" --clobber
