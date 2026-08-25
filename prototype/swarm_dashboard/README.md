@@ -8,6 +8,29 @@
 
 ---
 
+## 0. Boundary note (added 2026-08-25)
+
+This prototype is **experimental UI/prototyping work**. It is **not**
+the authoritative implementation of
+`ECO-DECISION-2026-08-19-TAURICODE-ROLE` (the ecosystem's ACCEPTED
+`agent-runtime-ui` role for tauricode), **not** an `EcosystemSnapshot`
+authority, and **not** a replacement for the `ecosystem-observer` crate
+(`crates/ecosystem-observer/`, already implemented as an isolated core —
+`snapshot.rs`/`git_read.rs`/`discover.rs`/`process_observe.rs` — the
+real Stage 1 read-only observer logic).
+
+Everything this prototype displays (the 6-node mesh, task counts,
+derivation traces, phoneme table) is fixture/mock data
+(`fixtures.ts` / `SwarmDashboardState::full_fixtures()`), never a real
+read of any repository's git state, Guix manifest, contract, or
+`tasks.my`. Its build/release (including the `t0.0.2` Windows/Linux
+artifacts) was authorized as its own scoped task, separately from — and
+without pre-empting — the ACCEPTED architecture's own future
+`packages/desktop-tauri/` integration. Promoting any piece of this
+prototype into that integration is a separate decision, not automatic.
+
+---
+
 ## 1. Overview & Strategic Purpose
 
 The **Tauricode Swarm Mesh Dashboard** provides a high-performance desktop telemetry workbench built for **Tauri v2**. It bridges the multi-agent P2P swarm mesh operating across ports **:9101 through :9107**, providing real-time node monitoring, live Pāṇinian Derivation Directed Acyclic Graph (DAG) streaming, and interactive phonetic articulatory inspection (PVC-16 and 64-bit Pratyāhāra ALU).

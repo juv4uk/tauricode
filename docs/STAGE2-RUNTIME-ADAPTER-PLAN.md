@@ -1,5 +1,19 @@
 # Stage 2 — Runtime Adapter Layer: Implementation Plan
 
+**Boundary note (added 2026-08-25):** "Stage 2" here is this crate's own
+internal staging, unrelated to the ecosystem's ACCEPTED
+`ECO-DECISION-2026-08-19-TAURICODE-ROLE` stage numbering (observer →
+launcher → controller → reproducible agent workstation) — do not
+conflate the two. `agent-runtime-contract` (this document's subject) is
+an OpenCode-process-lifecycle adapter boundary; it has no relationship
+to that decision's `EcosystemSnapshot`/`ecosystem-observer` read-only
+observation of the ecosystem's git/Guix/contract/task state, and is not
+that plan's Stage 1. Everything this document and `prototype/
+swarm_dashboard/` describe is experimental/prototype work, not the
+ACCEPTED architecture's own future `packages/desktop-tauri/`
+integration — see `prototype/swarm_dashboard/README.md`'s own boundary
+note for the fuller version of this distinction.
+
 Status: IN PROGRESS. Grounds every increment in the six audits completed
 2026-08-25 (fork model, dependency boundary, minimal stable core, adapter
 contract, event contract). Do not re-litigate those conclusions here without
