@@ -11,6 +11,13 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # Without this, the bot's own commit fails to push whenever a
+      # push touches .github/workflows/*.yml - GitHub blocks a token
+      # without this scope from modifying workflow files, even via a
+      # plain `git push` (confirmed via a real CI failure: "refusing to
+      # allow a GitHub App to create or update workflow ... without
+      # `workflows` permission", run 32870242419).
+      workflows: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
