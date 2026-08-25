@@ -139,8 +139,9 @@ Tauricode is not affiliated with or maintained by the OpenCode team.
 
 ## Development roadmap
 
-Stage 1 — Observer *(in progress — repository/git slice shipped;
-contracts, tasks, evidence, and Guix observation not yet)*
+Stage 1 — Observer _(in progress — repository/git slice shipped;
+contracts, tasks, evidence, and Guix observation not yet)_
+
 - repository state
 - contracts and drift
 - tasks
@@ -148,17 +149,20 @@ contracts, tasks, evidence, and Guix observation not yet)*
 - Guix state
 - local runtime observation
 
-Stage 2 — Launcher *(planned)*
+Stage 2 — Launcher _(planned)_
+
 - start agents
 - enter reproducible Guix environments
 - launch runtime adapters
 
-Stage 3 — Controller *(planned)*
+Stage 3 — Controller _(planned)_
+
 - controlled task lifecycle
 - agent lifecycle
 - explicit permissions and authority boundaries
 
-Stage 4 — Reproducible Agent Workstation *(planned)*
+Stage 4 — Reproducible Agent Workstation _(planned)_
+
 - environment + agent + task + evidence as one reproducible workflow
 
 ## Current implementation

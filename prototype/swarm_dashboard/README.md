@@ -4,7 +4,7 @@
 **Date:** 2026-08-21  
 **Status:** `ACTIVE PROTOTYPE / P5 GATE DELIVERABLE`  
 **Epistemic Layer:** Layer 6 (Developer Workbench, Desktop UI & Real-Time Telemetry)  
-**Location:** `prototype/swarm_dashboard/`  
+**Location:** `prototype/swarm_dashboard/`
 
 ---
 
@@ -18,14 +18,14 @@ The **Tauricode Swarm Mesh Dashboard** provides a high-performance desktop telem
 
 The mesh interconnects 6 autonomous specialized nodes:
 
-| Node ID | TCP/IPC Port | Specialization / Role | Epistemic Layer | Tasks Completed |
-|---|---|---|---|---|
-| **`my-lisp-1`** | **`:9101`** | Core Lisp VM / Semantic Oracle / Knowledge Store | Layer 6 (VM) / Layer 5 (Proof) | **82** |
-| **`fpga-lisp-1`** | **`:9102`** | Hardware Synthesizer / ALU & Accelerator Co-processor | Layer 6 (FPGA RTL) | **38** |
-| **`cml-1`** | **`:9103`** | CML Compiler Architecture & Lowering Middle-End | Layer 6 (Compiler / Hardware) | **44** |
-| **`my-idea-1`** | **`:9104`** | IDE & Visual Tooling Workbench / System Observatory | Layer 6 (Workbench UI) | **41** |
-| **`my-lisp-panini-1`** | **`:9106`** | Panini Grammar Machine / Derivation IR Engine | Layer 2 (Grammar) / Layer 5 (DAG) | **46** |
-| **`shiva-sutras-1`** | **`:9107`** | Phonetic Engine / Śiva Sūtras, UPC-8 & PVC-16 Canon | Layer 1 (Canon) / Layer 6 (Codecs) | **47** |
+| Node ID                | TCP/IPC Port | Specialization / Role                                 | Epistemic Layer                    | Tasks Completed |
+| ---------------------- | ------------ | ----------------------------------------------------- | ---------------------------------- | --------------- |
+| **`my-lisp-1`**        | **`:9101`**  | Core Lisp VM / Semantic Oracle / Knowledge Store      | Layer 6 (VM) / Layer 5 (Proof)     | **82**          |
+| **`fpga-lisp-1`**      | **`:9102`**  | Hardware Synthesizer / ALU & Accelerator Co-processor | Layer 6 (FPGA RTL)                 | **38**          |
+| **`cml-1`**            | **`:9103`**  | CML Compiler Architecture & Lowering Middle-End       | Layer 6 (Compiler / Hardware)      | **44**          |
+| **`my-idea-1`**        | **`:9104`**  | IDE & Visual Tooling Workbench / System Observatory   | Layer 6 (Workbench UI)             | **41**          |
+| **`my-lisp-panini-1`** | **`:9106`**  | Panini Grammar Machine / Derivation IR Engine         | Layer 2 (Grammar) / Layer 5 (DAG)  | **46**          |
+| **`shiva-sutras-1`**   | **`:9107`**  | Phonetic Engine / Śiva Sūtras, UPC-8 & PVC-16 Canon   | Layer 1 (Canon) / Layer 6 (Codecs) | **47**          |
 
 **Total Mesh Completed Tasks:** **298 completed tasks** (exceeding the 271+ task target).
 
@@ -58,13 +58,15 @@ pub async fn stream_phoneme_vector(
 ```
 
 ### TypeScript Client Bridge (`tauri_ipc.ts`)
-The client bridge provides type-safe access with automatic detection of Tauri Webview environment vs. browser fallback:
-```typescript
-import { getSwarmTopology, queryDerivationTrace, streamPhonemeVector } from './tauri_ipc';
 
-const topology = await getSwarmTopology();
-const trace = await queryDerivationTrace('bhavati');
-const phoneme = await streamPhonemeVector('a');
+The client bridge provides type-safe access with automatic detection of Tauri Webview environment vs. browser fallback:
+
+```typescript
+import { getSwarmTopology, queryDerivationTrace, streamPhonemeVector } from "./tauri_ipc"
+
+const topology = await getSwarmTopology()
+const trace = await queryDerivationTrace("bhavati")
+const phoneme = await streamPhonemeVector("a")
 ```
 
 ---
@@ -82,7 +84,9 @@ const phoneme = await streamPhonemeVector('a');
 ## 5. Running the Prototype
 
 ### Standalone Browser Mode (Zero Dependencies)
+
 Open `index.html` directly in any modern browser:
+
 ```bash
 # Using Python built-in server or opening directly:
 python3 -m http.server 8080
@@ -90,6 +94,7 @@ python3 -m http.server 8080
 ```
 
 ### Running Automated Test Suite
+
 ```bash
 node test_swarm_dashboard.mjs
 ```
@@ -99,5 +104,5 @@ node test_swarm_dashboard.mjs
 ## 6. Epistemic Integrity & Compliance
 
 - **ECA-007 Compliance:** All derivation transitions are sealed with SHA-256 content digests (`state:sha256:...`).
-- **Paribhāṣā Conflict Resolution:** Demonstrates deterministic rule precedence (e.g., *Apavāda > Utsarga* where Sūtra 2.4.75 *Ślu* blocks 3.1.68 *Śap* in `dadāti`).
+- **Paribhāṣā Conflict Resolution:** Demonstrates deterministic rule precedence (e.g., _Apavāda > Utsarga_ where Sūtra 2.4.75 _Ślu_ blocks 3.1.68 _Śap_ in `dadāti`).
 - **Phonetic Fidelity:** Articulatory parameters adhere to the ratified **ADR-002** standard and **PVC-16** specification.

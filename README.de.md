@@ -145,8 +145,9 @@ von ihm gepflegt.
 
 ## Entwicklungs-Roadmap
 
-Stage 1 — Observer *(in Arbeit — Repository/Git-Slice ausgeliefert;
-Contracts, Tasks, Evidence und Guix-Beobachtung noch nicht)*
+Stage 1 — Observer _(in Arbeit — Repository/Git-Slice ausgeliefert;
+Contracts, Tasks, Evidence und Guix-Beobachtung noch nicht)_
+
 - Repository-Zustand
 - Contracts und Drift
 - Tasks
@@ -154,17 +155,20 @@ Contracts, Tasks, Evidence und Guix-Beobachtung noch nicht)*
 - Guix-Zustand
 - lokale Runtime-Beobachtung
 
-Stage 2 — Launcher *(geplant)*
+Stage 2 — Launcher _(geplant)_
+
 - Agenten starten
 - reproduzierbare Guix-Umgebungen betreten
 - Runtime-Adapter starten
 
-Stage 3 — Controller *(geplant)*
+Stage 3 — Controller _(geplant)_
+
 - kontrollierter Task-Lebenszyklus
 - Agenten-Lebenszyklus
 - explizite Berechtigungen und Authority-Grenzen
 
-Stage 4 — Reproducible Agent Workstation *(geplant)*
+Stage 4 — Reproducible Agent Workstation _(geplant)_
+
 - Umgebung + Agent + Task + Evidence als ein reproduzierbarer
   Workflow
 

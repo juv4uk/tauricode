@@ -3,45 +3,42 @@
  * Features step-by-step playback, SHA-256 state hash validation, AST diffing, and rule citations.
  */
 
-import React, { useState, useEffect } from 'react';
-import { DerivationTrace, DerivationState } from '../types';
+import React, { useState, useEffect } from "react"
+import { DerivationTrace, DerivationState } from "../types"
 
 interface DerivationDagStreamerProps {
-  trace: DerivationTrace;
-  onSelectDerivation: (id: string) => void;
+  trace: DerivationTrace
+  onSelectDerivation: (id: string) => void
 }
 
-export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
-  trace,
-  onSelectDerivation
-}) => {
-  const [currentStep, setCurrentStep] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({ trace, onSelectDerivation }) => {
+  const [currentStep, setCurrentStep] = useState<number>(0)
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
 
   useEffect(() => {
-    setCurrentStep(0);
-    setIsPlaying(false);
-  }, [trace.derivation_id]);
+    setCurrentStep(0)
+    setIsPlaying(false)
+  }, [trace.derivation_id])
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
+    let timer: NodeJS.Timeout | null = null
     if (isPlaying) {
       timer = setInterval(() => {
         setCurrentStep((prev) => {
           if (prev >= trace.states.length - 1) {
-            setIsPlaying(false);
-            return prev;
+            setIsPlaying(false)
+            return prev
           }
-          return prev + 1;
-        });
-      }, 1500);
+          return prev + 1
+        })
+      }, 1500)
     }
     return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [isPlaying, trace.states.length]);
+      if (timer) clearInterval(timer)
+    }
+  }, [isPlaying, trace.states.length])
 
-  const activeState: DerivationState = trace.states[currentStep] || trace.states[0];
+  const activeState: DerivationState = trace.states[currentStep] || trace.states[0]
 
   return (
     <div className="space-y-6">
@@ -62,21 +59,21 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onSelectDerivation('bhavati')}
+            onClick={() => onSelectDerivation("bhavati")}
             className={`px-3 py-1.5 rounded text-xs font-mono font-bold transition ${
-              trace.derivation_id.includes('bhavati')
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              trace.derivation_id.includes("bhavati")
+                ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
+                : "bg-slate-800 text-slate-400 hover:text-slate-200"
             }`}
           >
             भवति (bhavati)
           </button>
           <button
-            onClick={() => onSelectDerivation('dadati')}
+            onClick={() => onSelectDerivation("dadati")}
             className={`px-3 py-1.5 rounded text-xs font-mono font-bold transition ${
-              trace.derivation_id.includes('dadati')
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              trace.derivation_id.includes("dadati")
+                ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
+                : "bg-slate-800 text-slate-400 hover:text-slate-200"
             }`}
           >
             ददाति (dadāti)
@@ -91,33 +88,33 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
           <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-800 -z-0" />
 
           {trace.states.map((st, idx) => {
-            const isDone = idx <= currentStep;
-            const isCurrent = idx === currentStep;
+            const isDone = idx <= currentStep
+            const isCurrent = idx === currentStep
             return (
               <div
                 key={st.id}
                 onClick={() => {
-                  setIsPlaying(false);
-                  setCurrentStep(idx);
+                  setIsPlaying(false)
+                  setCurrentStep(idx)
                 }}
                 className="flex flex-col items-center cursor-pointer z-10 group"
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-all ${
                     isCurrent
-                      ? 'bg-sky-500 text-white ring-4 ring-sky-500/20 scale-110 shadow-lg shadow-sky-500/30'
+                      ? "bg-sky-500 text-white ring-4 ring-sky-500/20 scale-110 shadow-lg shadow-sky-500/30"
                       : isDone
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-800 text-slate-500 group-hover:bg-slate-700"
                   }`}
                 >
                   S{idx}
                 </div>
                 <span className="text-[10px] font-mono mt-1.5 text-slate-400 group-hover:text-slate-200 max-w-[70px] truncate text-center">
-                  {st.applied_rule?.sutra_id || 'Input'}
+                  {st.applied_rule?.sutra_id || "Input"}
                 </span>
               </div>
-            );
+            )
           })}
         </div>
 
@@ -126,8 +123,8 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setIsPlaying(false);
-                setCurrentStep(0);
+                setIsPlaying(false)
+                setCurrentStep(0)
               }}
               disabled={currentStep === 0}
               className="p-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 text-xs font-mono"
@@ -136,8 +133,8 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
             </button>
             <button
               onClick={() => {
-                setIsPlaying(false);
-                setCurrentStep((p) => Math.max(0, p - 1));
+                setIsPlaying(false)
+                setCurrentStep((p) => Math.max(0, p - 1))
               }}
               disabled={currentStep === 0}
               className="p-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 text-xs font-mono"
@@ -148,12 +145,12 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
               onClick={() => setIsPlaying(!isPlaying)}
               className="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-bold"
             >
-              {isPlaying ? '⏸ Pause' : '▶ Play Stream'}
+              {isPlaying ? "⏸ Pause" : "▶ Play Stream"}
             </button>
             <button
               onClick={() => {
-                setIsPlaying(false);
-                setCurrentStep((p) => Math.min(trace.states.length - 1, p + 1));
+                setIsPlaying(false)
+                setCurrentStep((p) => Math.min(trace.states.length - 1, p + 1))
               }}
               disabled={currentStep >= trace.states.length - 1}
               className="p-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 text-xs font-mono"
@@ -162,8 +159,8 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
             </button>
             <button
               onClick={() => {
-                setIsPlaying(false);
-                setCurrentStep(trace.states.length - 1);
+                setIsPlaying(false)
+                setCurrentStep(trace.states.length - 1)
               }}
               disabled={currentStep >= trace.states.length - 1}
               className="p-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 text-xs font-mono"
@@ -199,9 +196,7 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-100"
               >
                 <span className="font-bold font-mono text-sky-400">{t.surface_form}</span>
-                <span className="text-[10px] px-1 py-0.5 rounded bg-slate-900 text-slate-400 font-mono">
-                  {t.kind}
-                </span>
+                <span className="text-[10px] px-1 py-0.5 rounded bg-slate-900 text-slate-400 font-mono">{t.kind}</span>
               </div>
             ))}
           </div>
@@ -218,7 +213,10 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
               <span className="text-[10px] text-slate-500 uppercase font-mono block">State Transition Diff</span>
               <div className="flex flex-wrap gap-2 text-xs font-mono">
                 {activeState.diff.added.map((a) => (
-                  <span key={a} className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                  <span
+                    key={a}
+                    className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800"
+                  >
                     {a}
                   </span>
                 ))}
@@ -228,7 +226,10 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
                   </span>
                 ))}
                 {activeState.diff.transformed.map((tr) => (
-                  <span key={tr.from} className="px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800">
+                  <span
+                    key={tr.from}
+                    className="px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800"
+                  >
                     {tr.from} → {tr.to}
                   </span>
                 ))}
@@ -253,12 +254,8 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
           {activeState.applied_rule ? (
             <div className="space-y-3">
               <div className="p-4 bg-slate-950/70 rounded-lg border border-slate-800">
-                <div className="text-base font-bold text-amber-300 mb-1">
-                  {activeState.applied_rule.text_deva}
-                </div>
-                <div className="text-xs text-slate-400 font-mono mb-2">
-                  {activeState.applied_rule.text_slp1}
-                </div>
+                <div className="text-base font-bold text-amber-300 mb-1">{activeState.applied_rule.text_deva}</div>
+                <div className="text-xs text-slate-400 font-mono mb-2">{activeState.applied_rule.text_slp1}</div>
                 <p className="text-xs text-slate-300">{activeState.applied_rule.summary}</p>
               </div>
 
@@ -267,12 +264,10 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
                   <span className="text-[10px] text-purple-400 uppercase font-mono font-bold block">
                     ⚡ Paribhāṣā Priority Resolution
                   </span>
-                  <p className="text-xs text-purple-200 font-mono">
-                    {activeState.applied_rule.paribhasha_principle}
-                  </p>
+                  <p className="text-xs text-purple-200 font-mono">{activeState.applied_rule.paribhasha_principle}</p>
                   {activeState.applied_rule.blocked_sutras && (
                     <div className="text-[11px] text-purple-300 font-mono mt-1">
-                      Blocked: {activeState.applied_rule.blocked_sutras.join(', ')}
+                      Blocked: {activeState.applied_rule.blocked_sutras.join(", ")}
                     </div>
                   )}
                 </div>
@@ -286,5 +281,5 @@ export const DerivationDagStreamer: React.FC<DerivationDagStreamerProps> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

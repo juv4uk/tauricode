@@ -3,36 +3,34 @@
  * Features 16-bit PVC-16 vector inspection, 64-bit Pratyāhāra ALU testing, and Savarṇa (1.1.9) calculator.
  */
 
-import React, { useState } from 'react';
-import { PhonemeVectorData } from '../types';
-import { PHONEME_DATA_REGISTRY } from '../fixtures';
+import React, { useState } from "react"
+import { PhonemeVectorData } from "../types"
+import { PHONEME_DATA_REGISTRY } from "../fixtures"
 
 export const PhoneticInspector: React.FC = () => {
-  const [selectedPhoneme, setSelectedPhoneme] = useState<string>('a');
-  const [comparePhoneme, setComparePhoneme] = useState<string>('i');
-  const [rawPvc16, setRawPvc16] = useState<number>(0x0003);
+  const [selectedPhoneme, setSelectedPhoneme] = useState<string>("a")
+  const [comparePhoneme, setComparePhoneme] = useState<string>("i")
+  const [rawPvc16, setRawPvc16] = useState<number>(0x0003)
 
-  const activeData: PhonemeVectorData =
-    PHONEME_DATA_REGISTRY[selectedPhoneme] || PHONEME_DATA_REGISTRY['a'];
-  const compData: PhonemeVectorData =
-    PHONEME_DATA_REGISTRY[comparePhoneme] || PHONEME_DATA_REGISTRY['i'];
+  const activeData: PhonemeVectorData = PHONEME_DATA_REGISTRY[selectedPhoneme] || PHONEME_DATA_REGISTRY["a"]
+  const compData: PhonemeVectorData = PHONEME_DATA_REGISTRY[comparePhoneme] || PHONEME_DATA_REGISTRY["i"]
 
   const handleSelectPhoneme = (p: string) => {
-    setSelectedPhoneme(p);
-    const item = PHONEME_DATA_REGISTRY[p];
+    setSelectedPhoneme(p)
+    const item = PHONEME_DATA_REGISTRY[p]
     if (item) {
-      setRawPvc16(item.pvc16.raw);
+      setRawPvc16(item.pvc16.raw)
     }
-  };
+  }
 
   const toggleBit = (bitIndex: number) => {
-    setRawPvc16((prev) => prev ^ (1 << bitIndex));
-  };
+    setRawPvc16((prev) => prev ^ (1 << bitIndex))
+  }
 
   // Sūtra 1.1.9 Savarṇa Test: (sthāna == sthāna) && (prayatna == prayatna) && (is_vowel == is_vowel)
   const isSavarna =
     (activeData.pvc16.raw & 0x003e) === (compData.pvc16.raw & 0x003e) &&
-    (activeData.pvc16.raw & 0x0041) === (compData.pvc16.raw & 0x0041);
+    (activeData.pvc16.raw & 0x0041) === (compData.pvc16.raw & 0x0041)
 
   return (
     <div className="space-y-6">
@@ -51,23 +49,23 @@ export const PhoneticInspector: React.FC = () => {
           {/* Quick Phoneme Selectors */}
           <div className="flex flex-wrap gap-2">
             {Object.keys(PHONEME_DATA_REGISTRY).map((p) => {
-              const item = PHONEME_DATA_REGISTRY[p];
-              const isSel = selectedPhoneme === p;
+              const item = PHONEME_DATA_REGISTRY[p]
+              const isSel = selectedPhoneme === p
               return (
                 <button
                   key={p}
                   onClick={() => handleSelectPhoneme(p)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition ${
                     isSel
-                      ? 'bg-sky-600 text-white ring-2 ring-sky-400'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      ? "bg-sky-600 text-white ring-2 ring-sky-400"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   <span className="text-sm mr-1">{item.deva}</span>
                   <span>{item.phoneme}</span>
                   {item.isUkrainian && <span className="ml-1 text-[10px] text-amber-300">UA</span>}
                 </button>
-              );
+              )
             })}
           </div>
         </div>
@@ -83,7 +81,7 @@ export const PhoneticInspector: React.FC = () => {
                 PVC-16 REGISTER
               </span>
               <h4 className="font-mono font-bold text-slate-100">
-                0x{rawPvc16.toString(16).toUpperCase().padStart(4, '0')}
+                0x{rawPvc16.toString(16).toUpperCase().padStart(4, "0")}
               </h4>
             </div>
             <span className="text-xs font-mono text-slate-400">16-bit Articulatory Vector</span>
@@ -92,22 +90,22 @@ export const PhoneticInspector: React.FC = () => {
           {/* 16 Interactive Bit Cells */}
           <div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 pt-2">
             {Array.from({ length: 16 }).map((_, i) => {
-              const bit = 15 - i;
-              const isSet = Boolean((rawPvc16 >> bit) & 1);
+              const bit = 15 - i
+              const isSet = Boolean((rawPvc16 >> bit) & 1)
               return (
                 <button
                   key={bit}
                   onClick={() => toggleBit(bit)}
                   className={`flex flex-col items-center justify-center p-2 rounded border transition font-mono ${
                     isSet
-                      ? 'bg-sky-600/30 border-sky-500 text-sky-300'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-600 hover:border-slate-700'
+                      ? "bg-sky-600/30 border-sky-500 text-sky-300"
+                      : "bg-slate-950/60 border-slate-800 text-slate-600 hover:border-slate-700"
                   }`}
                 >
                   <span className="text-[9px] text-slate-400">{bit}</span>
-                  <span className="text-xs font-bold">{isSet ? '1' : '0'}</span>
+                  <span className="text-xs font-bold">{isSet ? "1" : "0"}</span>
                 </button>
-              );
+              )
             })}
           </div>
 
@@ -115,26 +113,22 @@ export const PhoneticInspector: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-xs font-mono">
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/80">
               <span className="text-[10px] text-slate-500 uppercase block">Bit 0: Class</span>
-              <span className="font-bold text-sky-400">
-                {(rawPvc16 & 1) ? 'VOWEL (ac)' : 'CONSONANT (hal)'}
-              </span>
+              <span className="font-bold text-sky-400">{rawPvc16 & 1 ? "VOWEL (ac)" : "CONSONANT (hal)"}</span>
             </div>
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/80">
               <span className="text-[10px] text-slate-500 uppercase block">Bits [5:1]: Sthāna</span>
-              <span className="font-bold text-indigo-400">
-                {activeData.pvc16.sthana.name}
-              </span>
+              <span className="font-bold text-indigo-400">{activeData.pvc16.sthana.name}</span>
             </div>
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/80">
               <span className="text-[10px] text-slate-500 uppercase block">Bits [9:6]: Prayatna</span>
-              <span className="font-bold text-purple-400">
-                {activeData.pvc16.prayatna.name}
-              </span>
+              <span className="font-bold text-purple-400">{activeData.pvc16.prayatna.name}</span>
             </div>
             <div className="bg-slate-950/60 p-2 rounded border border-slate-800/80">
               <span className="text-[10px] text-slate-500 uppercase block">Bit 14: Modifier</span>
-              <span className={`font-bold ${activeData.pvc16.modifier.isPalatalized ? 'text-amber-400' : 'text-slate-400'}`}>
-                {activeData.pvc16.modifier.isPalatalized ? 'Palatalized [ь]' : 'Plain'}
+              <span
+                className={`font-bold ${activeData.pvc16.modifier.isPalatalized ? "text-amber-400" : "text-slate-400"}`}
+              >
+                {activeData.pvc16.modifier.isPalatalized ? "Palatalized [ь]" : "Plain"}
               </span>
             </div>
           </div>
@@ -167,9 +161,7 @@ export const PhoneticInspector: React.FC = () => {
             <h4 className="text-xs font-mono text-slate-400">tulyāsyaprayatnaṁ savarṇam</h4>
           </div>
 
-          <p className="text-xs text-slate-400">
-            Computes articulatory homogeneity in 1 clock cycle via bitwise mask:
-          </p>
+          <p className="text-xs text-slate-400">Computes articulatory homogeneity in 1 clock cycle via bitwise mask:</p>
 
           {/* Comparator Selection */}
           <div className="flex items-center justify-between gap-3 p-3 bg-slate-950/70 rounded-lg border border-slate-800">
@@ -199,15 +191,15 @@ export const PhoneticInspector: React.FC = () => {
           <div
             className={`p-4 rounded-xl border text-center transition ${
               isSavarna
-                ? 'bg-emerald-950/50 border-emerald-500/80 shadow-lg shadow-emerald-500/10'
-                : 'bg-rose-950/50 border-rose-500/80 shadow-lg shadow-rose-500/10'
+                ? "bg-emerald-950/50 border-emerald-500/80 shadow-lg shadow-emerald-500/10"
+                : "bg-rose-950/50 border-rose-500/80 shadow-lg shadow-rose-500/10"
             }`}
           >
             <span className="text-[11px] uppercase font-mono tracking-wider block text-slate-400">
               Savarṇa Homogeneity Result
             </span>
-            <div className={`text-xl font-bold font-mono mt-1 ${isSavarna ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {isSavarna ? 'SAVARṆA (HOMOGENEOUS)' : 'ASAVARṆA (DISTINCT)'}
+            <div className={`text-xl font-bold font-mono mt-1 ${isSavarna ? "text-emerald-400" : "text-rose-400"}`}>
+              {isSavarna ? "SAVARṆA (HOMOGENEOUS)" : "ASAVARṆA (DISTINCT)"}
             </div>
             <span className="text-xs text-slate-400 font-mono mt-1 block">
               FPGA ALU Cost: 8 LUTs · Latency: 1 Cycle (~0.3 ns)
@@ -216,5 +208,5 @@ export const PhoneticInspector: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

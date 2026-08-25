@@ -138,8 +138,9 @@ Tauricode не афілійований з командою OpenCode і не п�
 
 ## Дорожня карта розвитку
 
-Stage 1 — Observer *(у процесі — repository/git-зріз реалізовано;
-contracts, tasks, evidence і Guix-спостереження — ще ні)*
+Stage 1 — Observer _(у процесі — repository/git-зріз реалізовано;
+contracts, tasks, evidence і Guix-спостереження — ще ні)_
+
 - стан репозиторію
 - контракти й дрейф
 - задачі
@@ -147,17 +148,20 @@ contracts, tasks, evidence і Guix-спостереження — ще ні)*
 - стан Guix
 - спостереження локального runtime
 
-Stage 2 — Launcher *(заплановано)*
+Stage 2 — Launcher _(заплановано)_
+
 - запуск агентів
 - вхід у відтворювані Guix-середовища
 - запуск runtime-адаптерів
 
-Stage 3 — Controller *(заплановано)*
+Stage 3 — Controller _(заплановано)_
+
 - контрольований життєвий цикл задач
 - життєвий цикл агентів
 - явні дозволи й межі authority
 
-Stage 4 — Reproducible Agent Workstation *(заплановано)*
+Stage 4 — Reproducible Agent Workstation _(заплановано)_
+
 - середовище + агент + задача + evidence як єдиний відтворюваний workflow
 
 ## Поточна реалізація

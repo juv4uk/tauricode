@@ -2,80 +2,77 @@
  * SwarmDashboardApp - Tauricode Desktop Workbench & Swarm Telemetry Master Application
  */
 
-import React, { useState, useEffect } from 'react';
-import { SwarmMeshTopology, SwarmNode, DerivationTrace, TaskStats } from './types';
-import { MOCK_SWARM_TOPOLOGY, MOCK_TASK_STATS, CANONICAL_DERIVATIONS } from './fixtures';
-import { getSwarmTopology, queryDerivationTrace, listenNodeHeartbeat } from './tauri_ipc';
-import { SwarmMeshGraph } from './components/SwarmMeshGraph';
-import { NodeHealthMatrix } from './components/NodeHealthMatrix';
-import { TaskCompletionTelemetry } from './components/TaskCompletionTelemetry';
-import { DerivationDagStreamer } from './components/DerivationDagStreamer';
-import { PhoneticInspector } from './components/PhoneticInspector';
+import React, { useState, useEffect } from "react"
+import { SwarmMeshTopology, SwarmNode, DerivationTrace, TaskStats } from "./types"
+import { MOCK_SWARM_TOPOLOGY, MOCK_TASK_STATS, CANONICAL_DERIVATIONS } from "./fixtures"
+import { getSwarmTopology, queryDerivationTrace, listenNodeHeartbeat } from "./tauri_ipc"
+import { SwarmMeshGraph } from "./components/SwarmMeshGraph"
+import { NodeHealthMatrix } from "./components/NodeHealthMatrix"
+import { TaskCompletionTelemetry } from "./components/TaskCompletionTelemetry"
+import { DerivationDagStreamer } from "./components/DerivationDagStreamer"
+import { PhoneticInspector } from "./components/PhoneticInspector"
 
-type ActiveTab = 'topology' | 'nodes' | 'tasks' | 'derivation' | 'phonetics' | 'ipc';
+type ActiveTab = "topology" | "nodes" | "tasks" | "derivation" | "phonetics" | "ipc"
 
 export const SwarmDashboardApp: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('topology');
-  const [topology, setTopology] = useState<SwarmMeshTopology>(MOCK_SWARM_TOPOLOGY);
-  const [taskStats, setTaskStats] = useState<TaskStats>(MOCK_TASK_STATS);
-  const [selectedNode, setSelectedNode] = useState<SwarmNode | null>(topology.nodes[0] || null);
-  const [activeDerivationId, setActiveDerivationId] = useState<string>('bhavati');
-  const [derivationTrace, setDerivationTrace] = useState<DerivationTrace>(CANONICAL_DERIVATIONS['bhavati']);
-  const [ipcLogs, setIpcLogs] = useState<Array<{ timestamp: string; command: string; payload: string }>>([]);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("topology")
+  const [topology, setTopology] = useState<SwarmMeshTopology>(MOCK_SWARM_TOPOLOGY)
+  const [taskStats, setTaskStats] = useState<TaskStats>(MOCK_TASK_STATS)
+  const [selectedNode, setSelectedNode] = useState<SwarmNode | null>(topology.nodes[0] || null)
+  const [activeDerivationId, setActiveDerivationId] = useState<string>("bhavati")
+  const [derivationTrace, setDerivationTrace] = useState<DerivationTrace>(CANONICAL_DERIVATIONS["bhavati"])
+  const [ipcLogs, setIpcLogs] = useState<Array<{ timestamp: string; command: string; payload: string }>>([])
 
   // Fetch initial topology and listen to heartbeats
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
     const fetchTopology = async () => {
       try {
-        const top = await getSwarmTopology();
+        const top = await getSwarmTopology()
         if (isMounted) {
-          setTopology(top);
-          logIpc('get_swarm_topology', `Loaded ${top.nodes.length} nodes, ${top.totalTasksCompleted} tasks`);
+          setTopology(top)
+          logIpc("get_swarm_topology", `Loaded ${top.nodes.length} nodes, ${top.totalTasksCompleted} tasks`)
         }
       } catch (e) {
-        console.error('Failed to load topology:', e);
+        console.error("Failed to load topology:", e)
       }
-    };
+    }
 
-    fetchTopology();
+    fetchTopology()
 
     const unsubscribe = listenNodeHeartbeat((nodeUpdate) => {
-      if (!isMounted) return;
+      if (!isMounted) return
       setTopology((prev) => ({
         ...prev,
-        nodes: prev.nodes.map((n) => (n.id === nodeUpdate.id ? nodeUpdate : n))
-      }));
-      logIpc('telemetry://node-heartbeat', `Node ${nodeUpdate.name} heartbeat (${nodeUpdate.latencyMs}ms)`);
-    });
+        nodes: prev.nodes.map((n) => (n.id === nodeUpdate.id ? nodeUpdate : n)),
+      }))
+      logIpc("telemetry://node-heartbeat", `Node ${nodeUpdate.name} heartbeat (${nodeUpdate.latencyMs}ms)`)
+    })
 
     return () => {
-      isMounted = false;
-      unsubscribe();
-    };
-  }, []);
+      isMounted = false
+      unsubscribe()
+    }
+  }, [])
 
   // Fetch Derivation Trace on selection change
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
     queryDerivationTrace(activeDerivationId).then((tr) => {
       if (isMounted) {
-        setDerivationTrace(tr);
-        logIpc('query_derivation_trace', `Retrieved ${tr.target_word} (${tr.states.length} states)`);
+        setDerivationTrace(tr)
+        logIpc("query_derivation_trace", `Retrieved ${tr.target_word} (${tr.states.length} states)`)
       }
-    });
+    })
     return () => {
-      isMounted = false;
-    };
-  }, [activeDerivationId]);
+      isMounted = false
+    }
+  }, [activeDerivationId])
 
   const logIpc = (command: string, payload: string) => {
-    setIpcLogs((prev) => [
-      { timestamp: new Date().toLocaleTimeString(), command, payload },
-      ...prev.slice(0, 49)
-    ]);
-  };
+    setIpcLogs((prev) => [{ timestamp: new Date().toLocaleTimeString(), command, payload }, ...prev.slice(0, 49)])
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-500 selection:text-white">
@@ -99,49 +96,49 @@ export const SwarmDashboardApp: React.FC = () => {
         {/* Tab Buttons */}
         <nav className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800 text-xs font-mono">
           <button
-            onClick={() => setActiveTab('topology')}
+            onClick={() => setActiveTab("topology")}
             className={`px-3 py-1.5 rounded transition ${
-              activeTab === 'topology' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeTab === "topology" ? "bg-sky-600 text-white font-bold" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             🌐 Mesh Topology
           </button>
           <button
-            onClick={() => setActiveTab('nodes')}
+            onClick={() => setActiveTab("nodes")}
             className={`px-3 py-1.5 rounded transition ${
-              activeTab === 'nodes' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeTab === "nodes" ? "bg-sky-600 text-white font-bold" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             📡 Nodes (:9101-:9107)
           </button>
           <button
-            onClick={() => setActiveTab('tasks')}
+            onClick={() => setActiveTab("tasks")}
             className={`px-3 py-1.5 rounded transition ${
-              activeTab === 'tasks' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeTab === "tasks" ? "bg-sky-600 text-white font-bold" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             📊 Tasks ({topology.totalTasksCompleted})
           </button>
           <button
-            onClick={() => setActiveTab('derivation')}
+            onClick={() => setActiveTab("derivation")}
             className={`px-3 py-1.5 rounded transition ${
-              activeTab === 'derivation' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeTab === "derivation" ? "bg-sky-600 text-white font-bold" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             🌿 Derivation DAG
           </button>
           <button
-            onClick={() => setActiveTab('phonetics')}
+            onClick={() => setActiveTab("phonetics")}
             className={`px-3 py-1.5 rounded transition ${
-              activeTab === 'phonetics' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeTab === "phonetics" ? "bg-sky-600 text-white font-bold" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             🔊 Phonetics Lab
           </button>
           <button
-            onClick={() => setActiveTab('ipc')}
+            onClick={() => setActiveTab("ipc")}
             className={`px-3 py-1.5 rounded transition ${
-              activeTab === 'ipc' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeTab === "ipc" ? "bg-sky-600 text-white font-bold" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             ⚡ IPC Console
@@ -151,14 +148,14 @@ export const SwarmDashboardApp: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
-        {activeTab === 'topology' && (
+        {activeTab === "topology" && (
           <div className="space-y-6">
             <SwarmMeshGraph
               topology={topology}
               selectedNodeId={selectedNode?.id || null}
               onSelectNode={(node) => {
-                setSelectedNode(node);
-                setActiveTab('nodes');
+                setSelectedNode(node)
+                setActiveTab("nodes")
               }}
             />
             <NodeHealthMatrix
@@ -169,7 +166,7 @@ export const SwarmDashboardApp: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'nodes' && (
+        {activeTab === "nodes" && (
           <NodeHealthMatrix
             nodes={topology.nodes}
             selectedNodeId={selectedNode?.id || null}
@@ -177,18 +174,15 @@ export const SwarmDashboardApp: React.FC = () => {
           />
         )}
 
-        {activeTab === 'tasks' && <TaskCompletionTelemetry stats={taskStats} />}
+        {activeTab === "tasks" && <TaskCompletionTelemetry stats={taskStats} />}
 
-        {activeTab === 'derivation' && (
-          <DerivationDagStreamer
-            trace={derivationTrace}
-            onSelectDerivation={(id) => setActiveDerivationId(id)}
-          />
+        {activeTab === "derivation" && (
+          <DerivationDagStreamer trace={derivationTrace} onSelectDerivation={(id) => setActiveDerivationId(id)} />
         )}
 
-        {activeTab === 'phonetics' && <PhoneticInspector />}
+        {activeTab === "phonetics" && <PhoneticInspector />}
 
-        {activeTab === 'ipc' && (
+        {activeTab === "ipc" && (
           <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider font-mono">
@@ -215,5 +209,5 @@ export const SwarmDashboardApp: React.FC = () => {
         <span>Epistemic Compliance: ECA-007</span>
       </footer>
     </div>
-  );
-};
+  )
+}

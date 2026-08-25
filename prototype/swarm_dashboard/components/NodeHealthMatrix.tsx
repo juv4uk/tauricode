@@ -3,32 +3,28 @@
  * Displays node health, role, port (:9101-:9107), completed tasks, CPU, memory, and capabilities.
  */
 
-import React from 'react';
-import { SwarmNode } from '../types';
+import React from "react"
+import { SwarmNode } from "../types"
 
 interface NodeHealthMatrixProps {
-  nodes: SwarmNode[];
-  selectedNodeId: string | null;
-  onSelectNode: (node: SwarmNode) => void;
+  nodes: SwarmNode[]
+  selectedNodeId: string | null
+  onSelectNode: (node: SwarmNode) => void
 }
 
-export const NodeHealthMatrix: React.FC<NodeHealthMatrixProps> = ({
-  nodes,
-  selectedNodeId,
-  onSelectNode
-}) => {
+export const NodeHealthMatrix: React.FC<NodeHealthMatrixProps> = ({ nodes, selectedNodeId, onSelectNode }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {nodes.map((node) => {
-        const isSelected = selectedNodeId === node.id;
+        const isSelected = selectedNodeId === node.id
         return (
           <div
             key={node.id}
             onClick={() => onSelectNode(node)}
             className={`cursor-pointer rounded-xl p-4 transition-all duration-200 border ${
               isSelected
-                ? 'bg-slate-800/90 border-sky-500 shadow-lg shadow-sky-500/10 ring-1 ring-sky-500'
-                : 'bg-slate-900/70 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'
+                ? "bg-slate-800/90 border-sky-500 shadow-lg shadow-sky-500/10 ring-1 ring-sky-500"
+                : "bg-slate-900/70 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50"
             }`}
           >
             {/* Header */}
@@ -37,7 +33,7 @@ export const NodeHealthMatrix: React.FC<NodeHealthMatrixProps> = ({
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-2.5 h-2.5 rounded-full ${
-                      node.status === 'ONLINE' ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-amber-400'
+                      node.status === "ONLINE" ? "bg-emerald-400 shadow-sm shadow-emerald-400" : "bg-amber-400"
                     }`}
                   />
                   <h4 className="font-bold text-slate-100 text-base">{node.name}</h4>
@@ -63,7 +59,9 @@ export const NodeHealthMatrix: React.FC<NodeHealthMatrixProps> = ({
               <div>
                 <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
                   <span>Tasks Completed</span>
-                  <span className="text-purple-400 font-bold">{node.completedTasks}/{node.totalTasks}</span>
+                  <span className="text-purple-400 font-bold">
+                    {node.completedTasks}/{node.totalTasks}
+                  </span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                   <div
@@ -88,10 +86,7 @@ export const NodeHealthMatrix: React.FC<NodeHealthMatrixProps> = ({
             {/* Capabilities */}
             <div className="mt-3 flex flex-wrap gap-1">
               {node.capabilities.slice(0, 4).map((cap) => (
-                <span
-                  key={cap}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono"
-                >
+                <span key={cap} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
                   #{cap}
                 </span>
               ))}
@@ -102,8 +97,8 @@ export const NodeHealthMatrix: React.FC<NodeHealthMatrixProps> = ({
               )}
             </div>
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}

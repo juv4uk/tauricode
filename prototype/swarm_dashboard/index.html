@@ -1,620 +1,1019 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TauriCode Workbench — Swarm Mesh Dashboard (:9101-:9107)</title>
-  <style>
-    :root {
-      --bg: #0b0f19;
-      --card-bg: #111827;
-      --card-border: #1f2937;
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.25);
-      --purple: #c084fc;
-      --emerald: #34d399;
-      --amber: #fbbf24;
-      --rose: #f87171;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      background: rgba(17, 24, 39, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--card-border);
-      padding: 12px 24px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .logo-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #0284c7, #6366f1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: bold;
-      color: white;
-      box-shadow: 0 0 15px var(--accent-glow);
-    }
-    .nav-tabs {
-      display: flex;
-      gap: 6px;
-      background: #030712;
-      padding: 4px;
-      border-radius: 8px;
-      border: 1px solid var(--card-border);
-    }
-    .nav-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .nav-btn:hover { color: var(--text); }
-    .nav-btn.active {
-      background: #0284c7;
-      color: white;
-      font-weight: bold;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
-    }
-    main {
-      flex: 1;
-      max-width: 1280px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    .card-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-mono);
-    }
-    .grid-6 {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 16px;
-    }
-    .node-card {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .node-card:hover {
-      border-color: var(--accent);
-      background: rgba(30, 41, 59, 0.6);
-      transform: translateY(-2px);
-    }
-    .node-card.selected {
-      border-color: var(--accent);
-      box-shadow: 0 0 16px var(--accent-glow);
-      background: rgba(30, 41, 59, 0.9);
-    }
-    .badge {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-    .badge-port { background: #082f49; color: var(--accent); border: 1px solid #0369a1; }
-    .badge-ok { background: #064e3b; color: var(--emerald); border: 1px solid #059669; }
-    .badge-layer { background: #1e1b4b; color: var(--purple); border: 1px solid #4338ca; }
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 8px;
-    }
-    .progress-bar {
-      width: 100%;
-      height: 6px;
-      background: #1f2937;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 6px;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #0284c7, #a855f7);
-      border-radius: 999px;
-      transition: width 0.3s ease;
-    }
-    .btn {
-      background: #1e293b;
-      border: 1px solid var(--card-border);
-      color: var(--text);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-    .btn:hover { background: #334155; }
-    .btn-primary { background: #0284c7; color: white; border: none; }
-    .btn-primary:hover { background: #0369a1; }
-    .step-node {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: bold;
-      background: #1f2937;
-      color: var(--text-muted);
-      border: 2px solid #374151;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .step-node.active {
-      background: #0284c7;
-      color: white;
-      border-color: #38bdf8;
-      box-shadow: 0 0 12px var(--accent-glow);
-      transform: scale(1.15);
-    }
-    .step-node.done {
-      background: #4f46e5;
-      color: white;
-      border-color: #6366f1;
-    }
-    .bit-btn {
-      padding: 6px 2px;
-      border-radius: 4px;
-      border: 1px solid var(--card-border);
-      background: #0f172a;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      cursor: pointer;
-      text-align: center;
-    }
-    .bit-btn.active {
-      background: rgba(56, 189, 248, 0.25);
-      border-color: var(--accent);
-      color: var(--accent);
-      font-weight: bold;
-    }
-    footer {
-      border-top: 1px solid var(--card-border);
-      padding: 16px 24px;
-      background: #070b13;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: #6b7280;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Header -->
-  <header>
-    <div class="brand">
-      <div class="logo-badge">τ</div>
-      <div>
-        <h1 style="font-size: 15px; font-weight: 700; color: white;">TauriCode Workbench</h1>
-        <p style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">Swarm Node Mesh Telemetry (:9101 - :9107)</p>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs">
-      <button class="nav-btn active" onclick="switchTab('topology')">🌐 Mesh Topology</button>
-      <button class="nav-btn" onclick="switchTab('nodes')">📡 Nodes (:9101-:9107)</button>
-      <button class="nav-btn" onclick="switchTab('tasks')">📊 Tasks (298+)</button>
-      <button class="nav-btn" onclick="switchTab('derivation')">🌿 Derivation DAG</button>
-      <button class="nav-btn" onclick="switchTab('phonetics')">🔊 Phonetics Lab</button>
-      <button class="nav-btn" onclick="switchTab('ipc')">⚡ Tauri IPC</button>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main>
-    <!-- TAB 1: MESH TOPOLOGY -->
-    <div id="tab-topology" class="tab-pane">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">🌐 Live P2P Swarm Network Canvas (Ports 9101-9107)</span>
-          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--emerald);">● 6/6 NODES ONLINE · 100% HEALTH</span>
-        </div>
-        <div style="display: flex; justify-content: center; background: #030712; border-radius: 8px; padding: 12px; border: 1px solid #1f2937;">
-          <canvas id="meshCanvas" width="760" height="460" style="max-width: 100%; height: auto; cursor: pointer;"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: NODES MATRIX -->
-    <div id="tab-nodes" class="tab-pane" style="display: none;">
-      <div class="card-header" style="margin-bottom: 8px;">
-        <span class="card-title">📡 Active Swarm Node Health Matrix</span>
-        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent);">Target Ports :9101 through :9107</span>
-      </div>
-      <div class="grid-6" id="nodesContainer"></div>
-    </div>
-
-    <!-- TAB 3: TASKS TELEMETRY -->
-    <div id="tab-tasks" class="tab-pane" style="display: none;">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">📊 Real-Time Task Completion Telemetry</span>
-          <span class="badge badge-ok">298+ TASKS COMPLETE · 0 FAILED</span>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-          <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937;">
-            <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">TOTAL MESH TASKS</div>
-            <div style="font-size: 24px; font-weight: bold; color: var(--purple); font-family: var(--font-mono); margin-top: 4px;">298</div>
-          </div>
-          <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937;">
-            <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">COMPLETION RATE</div>
-            <div style="font-size: 24px; font-weight: bold; color: var(--emerald); font-family: var(--font-mono); margin-top: 4px;">100.0%</div>
-          </div>
-          <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937;">
-            <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">ACTIVE NODES</div>
-            <div style="font-size: 24px; font-weight: bold; color: var(--accent); font-family: var(--font-mono); margin-top: 4px;">6 / 6</div>
-          </div>
-          <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937;">
-            <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">PROOF PROTOCOL</div>
-            <div style="font-size: 20px; font-weight: bold; color: #818cf8; font-family: var(--font-mono); margin-top: 6px;">ECA-007</div>
-          </div>
-        </div>
-
-        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: bold;">
-          RECENT AUDIT & EXECUTION LOG:
-        </div>
-        <div id="tasksList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-      </div>
-    </div>
-
-    <!-- TAB 4: DERIVATION DAG STREAMER -->
-    <div id="tab-derivation" class="tab-pane" style="display: none;">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">🌿 Pāṇinian Derivation Proof Graph & State Machine</span>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary" id="btnDrvBhavati" onclick="loadDerivation('bhavati')">भवति (bhavati)</button>
-            <button class="btn" id="btnDrvDadati" onclick="loadDerivation('dadati')">ददाति (dadāti)</button>
-          </div>
-        </div>
-
-        <!-- Step Navigation Ribbon -->
-        <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-          <div id="dagRibbon" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px;"></div>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; gap: 6px;">
-              <button class="btn" onclick="stepDerivation(-1)">◀ Prev</button>
-              <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">▶ Play</button>
-              <button class="btn" onclick="stepDerivation(1)">Next ▶</button>
-            </div>
-            <span id="stepIndicator" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);"></span>
-          </div>
-        </div>
-
-        <!-- State Inspector -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px;">
-            <div style="font-size: 11px; font-family: var(--font-mono); color: var(--accent); margin-bottom: 8px; font-weight: bold;">
-              STATE MORPHOLOGY (AST TOKENS)
-            </div>
-            <div id="stateTerms" style="display: flex; flex-wrap: gap; gap: 8px; margin-bottom: 12px;"></div>
-            <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">IMMUTABLE SHA-256 STATE HASH:</div>
-            <code id="stateHash" style="display: block; font-size: 11px; color: var(--emerald); font-family: var(--font-mono); word-break: break-all; margin-top: 4px;"></code>
-          </div>
-
-          <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px;">
-            <div style="font-size: 11px; font-family: var(--font-mono); color: var(--purple); margin-bottom: 8px; font-weight: bold;">
-              APPLIED AṢṬĀDHYĀYĪ SŪTRA & PARIBHĀṢĀ
-            </div>
-            <div id="ruleContent"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 5: PHONETICS LAB -->
-    <div id="tab-phonetics" class="tab-pane" style="display: none;">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">🔊 Phonetic Vector Inspector (PVC-16 & Pratyāhāra ALU)</span>
-          <span class="badge badge-port">ADR-002 RATIFIED · SŪTRA 1.1.9</span>
-        </div>
-
-        <!-- Phoneme Selector -->
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px;" id="phonemePicker"></div>
-
-        <!-- 16-Bit Register -->
-        <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-            <span style="font-family: var(--font-mono); font-size: 12px; font-weight: bold; color: var(--accent);">
-              PVC-16 REGISTER BITS [15..0]
-            </span>
-            <code id="pvcHex" style="font-family: var(--font-mono); font-size: 12px; color: var(--emerald); font-weight: bold;"></code>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px;" id="pvcBits"></div>
-        </div>
-
-        <!-- Savarṇa Tester (1.1.9) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px;">
-            <div style="font-size: 11px; font-family: var(--font-mono); color: var(--purple); font-weight: bold; margin-bottom: 8px;">
-              ARTICULATORY ATTRIBUTES
-            </div>
-            <div id="phonemeDetails" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.8;"></div>
-          </div>
-
-          <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px; text-align: center;">
-            <div style="font-size: 11px; font-family: var(--font-mono); color: var(--accent); font-weight: bold; margin-bottom: 8px;">
-              SŪTRA 1.1.9 SAVARṆA TESTER
-            </div>
-            <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin: 12px 0;">
-              <span id="savSoundA" style="font-size: 18px; font-family: var(--font-mono); font-weight: bold; color: var(--accent);"></span>
-              <span style="font-family: var(--font-mono); color: var(--text-muted);">vs</span>
-              <select id="savSoundBSelect" onchange="updateSavarnaTest()" style="background: #1f2937; border: 1px solid #374151; color: white; padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono);"></select>
-            </div>
-            <div id="savarnaBadge" style="padding: 12px; border-radius: 8px; font-family: var(--font-mono); font-weight: bold; font-size: 14px; margin-top: 12px;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 6: TAURI IPC CONSOLE -->
-    <div id="tab-ipc" class="tab-pane" style="display: none;">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">⚡ Tauri v2 IPC Command & Event Console</span>
-          <span class="badge badge-ok">IPC ACTIVE</span>
-        </div>
-        <div id="ipcLogContainer" style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px; font-family: var(--font-mono); font-size: 11px; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <span>TauriCode Workbench · Swarm Nodes (:9101 - :9107) · P5 Gate Readiness</span>
-    <span>Epistemic Compliance: ECA-007 · SHA-256 Proof Certified</span>
-  </footer>
-
-  <script>
-    // ========================================================================
-    // Mock Telemetry & Data Fixtures
-    // ========================================================================
-    const SWARM_NODES = [
-      { id: 'my-lisp-1', name: 'my-lisp-1', port: 9101, role: 'Core Lisp VM / Semantic Oracle', repo: 'my-lisp', layer: 'Layer 6/5', latency: 1.2, tasks: 82, cpu: 14.5, mem: 128 },
-      { id: 'fpga-lisp-1', name: 'fpga-lisp-1', port: 9102, role: 'Hardware Synthesizer / ALU Co-proc', repo: 'fpga-lisp', layer: 'Layer 6', latency: 0.8, tasks: 38, cpu: 8.2, mem: 64 },
-      { id: 'cml-1', name: 'cml-1', port: 9103, role: 'CML Compiler Lowering Middle-End', repo: 'cml', layer: 'Layer 6', latency: 1.5, tasks: 44, cpu: 21.0, mem: 195 },
-      { id: 'my-idea-1', name: 'my-idea-1', port: 9104, role: 'IDE & Visual System Observatory', repo: 'my-idea', layer: 'Layer 6', latency: 1.8, tasks: 41, cpu: 18.7, mem: 245 },
-      { id: 'my-lisp-panini-1', name: 'my-lisp-panini-1', port: 9106, role: 'Panini Grammar Machine / Derivation IR', repo: 'my-lisp-panini', layer: 'Layer 2/5', latency: 2.1, tasks: 46, cpu: 28.4, mem: 312 },
-      { id: 'shiva-sutras-1', name: 'shiva-sutras-1', port: 9107, role: 'Phonetic Engine / UPC-8 & PVC-16', repo: 'shiva-sutras', layer: 'Layer 1/6', latency: 0.9, tasks: 47, cpu: 11.2, mem: 88 }
-    ];
-
-    const DERIVATIONS = {
-      bhavati: {
-        target: "भवति (bhavati)",
-        states: [
-          { id: "S0", terms: ["√bhū (dhātu)"], hash: "state:sha256:d8c5208bcae41a0ba1a29f8f2b7d483fb3ceb8b09d0cb093ffea75bbcaee1ea7", rule: "Input root √bhū" },
-          { id: "S1", terms: ["bhū", "+laṭ (lakāra)"], hash: "state:sha256:a6b610c14b7e8d75cf701be5e921d01ee3fdf9bcf693e506990d0b04c86ec596", rule: "3.2.123 vartamāne laṭ (Present tense)" },
-          { id: "S2", terms: ["bhū", "+tip (tiṅ)"], hash: "state:sha256:7bc59d81d2dfbc1cf8da294c73a216db8a13ef2b8df11559eeecfc316c4c0174", rule: "3.4.78 tiṅ-ādeśa (3rd singular parasmaipada)" },
-          { id: "S3", terms: ["bhū", "+ti"], hash: "state:sha256:b1ec7daea41e06d649da391b1a7d6560daaf47aa6a4387d8cb27efc90b63cbb0", rule: "1.3.9 tasya lopaḥ (Elides p it-marker)" },
-          { id: "S4", terms: ["bhū", "+śap", "+ti"], hash: "state:sha256:1a84f339cf01cb4d14210459c3d40ef6731be7a7bf734e40e6573c52e8055627", rule: "3.1.68 kartari śap (Inserts vikaraṇa)" },
-          { id: "S5", terms: ["bhū", "+a", "+ti"], hash: "state:sha256:56bce457c1d3bf30f04c643b1859c25db94474b34b6b6685718dfd374aa3e843", rule: "3.4.113 sārvadhātukam (śap -> a)" },
-          { id: "S6", terms: ["bho", "+a", "+ti"], hash: "state:sha256:0d18d4512e0e0f523173d12d09ff93ff790f977beaece5f7fe51dc1b764bfe47", rule: "7.3.84 sārvadhātukārdhadhātukayoḥ (Guṇa ū -> o)" },
-          { id: "S7", terms: ["bhav", "+a", "+ti"], hash: "state:sha256:8f4c281df6be48a5df9ee2ca531db5caebbc8b6fe2d721fa6252bf466986427d", rule: "6.1.78 eco 'yavāyāvaḥ (Sandhi o -> av)" },
-          { id: "S8", terms: ["bhavati (Pada)"], hash: "state:sha256:e647bc51b9e6f3128ef35b2e95a9992d9dcfdcb95e1e1a539bc27fa7a26f8664", rule: "1.4.14 suptiṅantaṁ padam (Valid Pada)" }
-        ]
-      },
-      dadati: {
-        target: "ददाति (dadāti)",
-        states: [
-          { id: "S0", terms: ["√dā (juhotyādi)"], hash: "state:sha256:4b9101f3b0e35261d7b322a3683fba227653bbd0a3d46386c67fa128adbc44e1", rule: "Input root √dā" },
-          { id: "S1", terms: ["dā", "+laṭ"], hash: "state:sha256:5c83b8909187a4de88d927a4e6bbcbcfd263914a8b7c4d51b3ca00d7fae01931", rule: "3.2.123 vartamāne laṭ" },
-          { id: "S2", terms: ["dā", "+ti"], hash: "state:sha256:773ab485be61d67a6d10c144e0573e86cbca388d75cf7940ee95a947bc18a514", rule: "3.4.78 tiṅ-ādeśa" },
-          { id: "S3", terms: ["dā", "(Ślu)", "+ti"], hash: "state:sha256:99f8d17baae7752e5d95d18d4512e0e0f523173d12d09ff93ff790f977beaece", rule: "2.4.75 juhotyādibhyaḥ śluḥ (Apavāda blocks 3.1.68)" },
-          { id: "S4", terms: ["dā", "+dā", "+ti"], hash: "state:sha256:31b1a7d6560daaf47aa6a4387d8cb27efc90b63cbb01a84f339cf01cb4d14210", rule: "6.1.10 ślau (Reduplication dā -> dā+dā)" },
-          { id: "S5", terms: ["da", "+dā", "+ti"], hash: "state:sha256:56bce457c1d3bf30f04c643b1859c25db94474b34b6b6685718dfd374aa3e843", rule: "7.4.59 hrasvaḥ (Shortens abhyāsa dā -> da)" },
-          { id: "S6", terms: ["dadāti (Pada)"], hash: "state:sha256:1a84f339cf01cb4d14210459c3d40ef6731be7a7bf734e40e6573c52e8055627", rule: "1.4.14 suptiṅantaṁ padam" }
-        ]
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TauriCode Workbench — Swarm Mesh Dashboard (:9101-:9107)</title>
+    <style>
+      :root {
+        --bg: #0b0f19;
+        --card-bg: #111827;
+        --card-border: #1f2937;
+        --accent: #38bdf8;
+        --accent-glow: rgba(56, 189, 248, 0.25);
+        --purple: #c084fc;
+        --emerald: #34d399;
+        --amber: #fbbf24;
+        --rose: #f87171;
+        --text: #f3f4f6;
+        --text-muted: #9ca3af;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
-    };
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        background: rgba(17, 24, 39, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--card-border);
+        padding: 12px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #0284c7, #6366f1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        box-shadow: 0 0 15px var(--accent-glow);
+      }
+      .nav-tabs {
+        display: flex;
+        gap: 6px;
+        background: #030712;
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+      }
+      .nav-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .nav-btn:hover {
+        color: var(--text);
+      }
+      .nav-btn.active {
+        background: #0284c7;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+      }
+      main {
+        flex: 1;
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+      }
+      .grid-6 {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 16px;
+      }
+      .node-card {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .node-card:hover {
+        border-color: var(--accent);
+        background: rgba(30, 41, 59, 0.6);
+        transform: translateY(-2px);
+      }
+      .node-card.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 16px var(--accent-glow);
+        background: rgba(30, 41, 59, 0.9);
+      }
+      .badge {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+      .badge-port {
+        background: #082f49;
+        color: var(--accent);
+        border: 1px solid #0369a1;
+      }
+      .badge-ok {
+        background: #064e3b;
+        color: var(--emerald);
+        border: 1px solid #059669;
+      }
+      .badge-layer {
+        background: #1e1b4b;
+        color: var(--purple);
+        border: 1px solid #4338ca;
+      }
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #1f2937;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0284c7, #a855f7);
+        border-radius: 999px;
+        transition: width 0.3s ease;
+      }
+      .btn {
+        background: #1e293b;
+        border: 1px solid var(--card-border);
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .btn:hover {
+        background: #334155;
+      }
+      .btn-primary {
+        background: #0284c7;
+        color: white;
+        border: none;
+      }
+      .btn-primary:hover {
+        background: #0369a1;
+      }
+      .step-node {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: bold;
+        background: #1f2937;
+        color: var(--text-muted);
+        border: 2px solid #374151;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .step-node.active {
+        background: #0284c7;
+        color: white;
+        border-color: #38bdf8;
+        box-shadow: 0 0 12px var(--accent-glow);
+        transform: scale(1.15);
+      }
+      .step-node.done {
+        background: #4f46e5;
+        color: white;
+        border-color: #6366f1;
+      }
+      .bit-btn {
+        padding: 6px 2px;
+        border-radius: 4px;
+        border: 1px solid var(--card-border);
+        background: #0f172a;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        cursor: pointer;
+        text-align: center;
+      }
+      .bit-btn.active {
+        background: rgba(56, 189, 248, 0.25);
+        border-color: var(--accent);
+        color: var(--accent);
+        font-weight: bold;
+      }
+      footer {
+        border-top: 1px solid var(--card-border);
+        padding: 16px 24px;
+        background: #070b13;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #6b7280;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="logo-badge">τ</div>
+        <div>
+          <h1 style="font-size: 15px; font-weight: 700; color: white">TauriCode Workbench</h1>
+          <p style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono)">
+            Swarm Node Mesh Telemetry (:9101 - :9107)
+          </p>
+        </div>
+      </div>
 
-    const PHONEMES = {
-      'a': { deva: 'अ', pvc: 0x0003, sthana: 'Kaṇṭhya (Velar)', prayatna: 'Vivṛta', isVow: true, upc8: '0x00' },
-      'i': { deva: 'इ', pvc: 0x0005, sthana: 'Tālavya (Palatal)', prayatna: 'Spṛṣṭa-vivṛta', isVow: true, upc8: '0x01' },
-      'u': { deva: 'उ', pvc: 0x0021, sthana: 'Oṣṭhya (Labial)', prayatna: 'Vivṛta', isVow: true, upc8: '0x02' },
-      'k': { deva: 'क्', pvc: 0x0042, sthana: 'Kaṇṭhya (Velar)', prayatna: 'Spṛṣṭa, Aghoṣa', isVow: false, upc8: '0x19' },
-      't_pal': { deva: 'т\'', pvc: 0x4048, sthana: 'Dantya + Palatalized', prayatna: 'Spṛṣṭa, M\'yakiy', isVow: false, upc8: '0x3D' }
-    };
+      <!-- Navigation Tabs -->
+      <div class="nav-tabs">
+        <button class="nav-btn active" onclick="switchTab('topology')">🌐 Mesh Topology</button>
+        <button class="nav-btn" onclick="switchTab('nodes')">📡 Nodes (:9101-:9107)</button>
+        <button class="nav-btn" onclick="switchTab('tasks')">📊 Tasks (298+)</button>
+        <button class="nav-btn" onclick="switchTab('derivation')">🌿 Derivation DAG</button>
+        <button class="nav-btn" onclick="switchTab('phonetics')">🔊 Phonetics Lab</button>
+        <button class="nav-btn" onclick="switchTab('ipc')">⚡ Tauri IPC</button>
+      </div>
+    </header>
 
-    // ========================================================================
-    // State Management & Navigation
-    // ========================================================================
-    let activeTab = 'topology';
-    let currentDrv = 'bhavati';
-    let currentStep = 0;
-    let isPlaying = false;
-    let playTimer = null;
-    let selectedPhoneme = 'a';
-    let selectedSavB = 'i';
+    <!-- Main Container -->
+    <main>
+      <!-- TAB 1: MESH TOPOLOGY -->
+      <div id="tab-topology" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🌐 Live P2P Swarm Network Canvas (Ports 9101-9107)</span>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--emerald)"
+              >● 6/6 NODES ONLINE · 100% HEALTH</span
+            >
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: center;
+              background: #030712;
+              border-radius: 8px;
+              padding: 12px;
+              border: 1px solid #1f2937;
+            "
+          >
+            <canvas
+              id="meshCanvas"
+              width="760"
+              height="460"
+              style="max-width: 100%; height: auto; cursor: pointer"
+            ></canvas>
+          </div>
+        </div>
+      </div>
 
-    function switchTab(tabId) {
-      activeTab = tabId;
-      document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-      document.getElementById('tab-' + tabId).style.display = 'block';
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      logIPC('switch_tab', 'Switched view to ' + tabId);
-    }
+      <!-- TAB 2: NODES MATRIX -->
+      <div id="tab-nodes" class="tab-pane" style="display: none">
+        <div class="card-header" style="margin-bottom: 8px">
+          <span class="card-title">📡 Active Swarm Node Health Matrix</span>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent)"
+            >Target Ports :9101 through :9107</span
+          >
+        </div>
+        <div class="grid-6" id="nodesContainer"></div>
+      </div>
 
-    function logIPC(cmd, msg) {
-      const container = document.getElementById('ipcLogContainer');
-      if (!container) return;
-      const row = document.createElement('div');
-      row.innerHTML = `<span style="color:#64748b;">${new Date().toLocaleTimeString()}</span> <strong style="color:var(--accent);">${cmd}</strong> <span style="color:#cbd5e1;">${msg}</span>`;
-      container.prepend(row);
-    }
+      <!-- TAB 3: TASKS TELEMETRY -->
+      <div id="tab-tasks" class="tab-pane" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📊 Real-Time Task Completion Telemetry</span>
+            <span class="badge badge-ok">298+ TASKS COMPLETE · 0 FAILED</span>
+          </div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 12px;
+              margin-bottom: 20px;
+            "
+          >
+            <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono)">
+                TOTAL MESH TASKS
+              </div>
+              <div
+                style="
+                  font-size: 24px;
+                  font-weight: bold;
+                  color: var(--purple);
+                  font-family: var(--font-mono);
+                  margin-top: 4px;
+                "
+              >
+                298
+              </div>
+            </div>
+            <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono)">
+                COMPLETION RATE
+              </div>
+              <div
+                style="
+                  font-size: 24px;
+                  font-weight: bold;
+                  color: var(--emerald);
+                  font-family: var(--font-mono);
+                  margin-top: 4px;
+                "
+              >
+                100.0%
+              </div>
+            </div>
+            <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono)">ACTIVE NODES</div>
+              <div
+                style="
+                  font-size: 24px;
+                  font-weight: bold;
+                  color: var(--accent);
+                  font-family: var(--font-mono);
+                  margin-top: 4px;
+                "
+              >
+                6 / 6
+              </div>
+            </div>
+            <div style="background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono)">PROOF PROTOCOL</div>
+              <div
+                style="
+                  font-size: 20px;
+                  font-weight: bold;
+                  color: #818cf8;
+                  font-family: var(--font-mono);
+                  margin-top: 6px;
+                "
+              >
+                ECA-007
+              </div>
+            </div>
+          </div>
 
-    // ========================================================================
-    // Canvas Mesh Visualizer
-    // ========================================================================
-    function initCanvas() {
-      const canvas = document.getElementById('meshCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      let tick = 0;
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 12px;
+              color: var(--text-muted);
+              margin-bottom: 8px;
+              font-weight: bold;
+            "
+          >
+            RECENT AUDIT & EXECUTION LOG:
+          </div>
+          <div id="tasksList" style="display: flex; flex-direction: column; gap: 8px"></div>
+        </div>
+      </div>
 
-      function draw() {
-        tick += 0.03;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      <!-- TAB 4: DERIVATION DAG STREAMER -->
+      <div id="tab-derivation" class="tab-pane" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🌿 Pāṇinian Derivation Proof Graph & State Machine</span>
+            <div style="display: flex; gap: 8px">
+              <button class="btn btn-primary" id="btnDrvBhavati" onclick="loadDerivation('bhavati')">
+                भवति (bhavati)
+              </button>
+              <button class="btn" id="btnDrvDadati" onclick="loadDerivation('dadati')">ददाति (dadāti)</button>
+            </div>
+          </div>
 
-        // Center ring
-        const cx = 380, cy = 230, rad = 150;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 50, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-        ctx.setLineDash([4, 4]);
-        ctx.stroke();
-        ctx.setLineDash([]);
+          <!-- Step Navigation Ribbon -->
+          <div
+            style="
+              background: #030712;
+              border: 1px solid #1f2937;
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 20px;
+            "
+          >
+            <div
+              id="dagRibbon"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+                overflow-x: auto;
+                padding-bottom: 4px;
+              "
+            ></div>
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <div style="display: flex; gap: 6px">
+                <button class="btn" onclick="stepDerivation(-1)">◀ Prev</button>
+                <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">▶ Play</button>
+                <button class="btn" onclick="stepDerivation(1)">Next ▶</button>
+              </div>
+              <span
+                id="stepIndicator"
+                style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted)"
+              ></span>
+            </div>
+          </div>
 
-        ctx.font = '11px monospace';
-        ctx.fillStyle = '#64748b';
-        ctx.textAlign = 'center';
-        ctx.fillText('SWARM MESH', cx, cy - 4);
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = 'bold 11px monospace';
-        ctx.fillText(':9101 - :9107', cx, cy + 12);
+          <!-- State Inspector -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+            <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px">
+              <div
+                style="
+                  font-size: 11px;
+                  font-family: var(--font-mono);
+                  color: var(--accent);
+                  margin-bottom: 8px;
+                  font-weight: bold;
+                "
+              >
+                STATE MORPHOLOGY (AST TOKENS)
+              </div>
+              <div id="stateTerms" style="display: flex; flex-wrap: gap; gap: 8px; margin-bottom: 12px"></div>
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono)">
+                IMMUTABLE SHA-256 STATE HASH:
+              </div>
+              <code
+                id="stateHash"
+                style="
+                  display: block;
+                  font-size: 11px;
+                  color: var(--emerald);
+                  font-family: var(--font-mono);
+                  word-break: break-all;
+                  margin-top: 4px;
+                "
+              ></code>
+            </div>
 
-        // Nodes coordinates
-        const positions = SWARM_NODES.map((node, i) => {
-          const ang = (i / SWARM_NODES.length) * Math.PI * 2 - Math.PI / 2;
-          return {
-            x: cx + Math.cos(ang) * rad,
-            y: cy + Math.sin(ang) * rad,
-            node
-          };
-        });
+            <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px">
+              <div
+                style="
+                  font-size: 11px;
+                  font-family: var(--font-mono);
+                  color: var(--purple);
+                  margin-bottom: 8px;
+                  font-weight: bold;
+                "
+              >
+                APPLIED AṢṬĀDHYĀYĪ SŪTRA & PARIBHĀṢĀ
+              </div>
+              <div id="ruleContent"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        // Draw connections & traveling pulses
-        positions.forEach((src, sIdx) => {
-          positions.forEach((tgt, tIdx) => {
-            if (sIdx < tIdx) {
-              ctx.beginPath();
-              ctx.moveTo(src.x, src.y);
-              ctx.lineTo(tgt.x, tgt.y);
-              ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
-              ctx.lineWidth = 1;
-              ctx.stroke();
+      <!-- TAB 5: PHONETICS LAB -->
+      <div id="tab-phonetics" class="tab-pane" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🔊 Phonetic Vector Inspector (PVC-16 & Pratyāhāra ALU)</span>
+            <span class="badge badge-port">ADR-002 RATIFIED · SŪTRA 1.1.9</span>
+          </div>
 
-              const pulseT = (tick * 0.7 + (sIdx + tIdx) * 0.2) % 1;
-              const px = src.x + (tgt.x - src.x) * pulseT;
-              const py = src.y + (tgt.y - src.y) * pulseT;
-              ctx.beginPath();
-              ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-              ctx.fillStyle = '#38bdf8';
-              ctx.fill();
+          <!-- Phoneme Selector -->
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px" id="phonemePicker"></div>
+
+          <!-- 16-Bit Register -->
+          <div
+            style="
+              background: #030712;
+              border: 1px solid #1f2937;
+              border-radius: 8px;
+              padding: 16px;
+              margin-bottom: 20px;
+            "
+          >
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px">
+              <span style="font-family: var(--font-mono); font-size: 12px; font-weight: bold; color: var(--accent)">
+                PVC-16 REGISTER BITS [15..0]
+              </span>
+              <code
+                id="pvcHex"
+                style="font-family: var(--font-mono); font-size: 12px; color: var(--emerald); font-weight: bold"
+              ></code>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px" id="pvcBits"></div>
+          </div>
+
+          <!-- Savarṇa Tester (1.1.9) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+            <div style="background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 16px">
+              <div
+                style="
+                  font-size: 11px;
+                  font-family: var(--font-mono);
+                  color: var(--purple);
+                  font-weight: bold;
+                  margin-bottom: 8px;
+                "
+              >
+                ARTICULATORY ATTRIBUTES
+              </div>
+              <div id="phonemeDetails" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.8"></div>
+            </div>
+
+            <div
+              style="
+                background: #030712;
+                border: 1px solid #1f2937;
+                border-radius: 8px;
+                padding: 16px;
+                text-align: center;
+              "
+            >
+              <div
+                style="
+                  font-size: 11px;
+                  font-family: var(--font-mono);
+                  color: var(--accent);
+                  font-weight: bold;
+                  margin-bottom: 8px;
+                "
+              >
+                SŪTRA 1.1.9 SAVARṆA TESTER
+              </div>
+              <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin: 12px 0">
+                <span
+                  id="savSoundA"
+                  style="font-size: 18px; font-family: var(--font-mono); font-weight: bold; color: var(--accent)"
+                ></span>
+                <span style="font-family: var(--font-mono); color: var(--text-muted)">vs</span>
+                <select
+                  id="savSoundBSelect"
+                  onchange="updateSavarnaTest()"
+                  style="
+                    background: #1f2937;
+                    border: 1px solid #374151;
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    font-family: var(--font-mono);
+                  "
+                ></select>
+              </div>
+              <div
+                id="savarnaBadge"
+                style="
+                  padding: 12px;
+                  border-radius: 8px;
+                  font-family: var(--font-mono);
+                  font-weight: bold;
+                  font-size: 14px;
+                  margin-top: 12px;
+                "
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: TAURI IPC CONSOLE -->
+      <div id="tab-ipc" class="tab-pane" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚡ Tauri v2 IPC Command & Event Console</span>
+            <span class="badge badge-ok">IPC ACTIVE</span>
+          </div>
+          <div
+            id="ipcLogContainer"
+            style="
+              background: #030712;
+              border: 1px solid #1f2937;
+              border-radius: 8px;
+              padding: 16px;
+              font-family: var(--font-mono);
+              font-size: 11px;
+              max-height: 400px;
+              overflow-y: auto;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+            "
+          ></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <span>TauriCode Workbench · Swarm Nodes (:9101 - :9107) · P5 Gate Readiness</span>
+      <span>Epistemic Compliance: ECA-007 · SHA-256 Proof Certified</span>
+    </footer>
+
+    <script>
+      // ========================================================================
+      // Mock Telemetry & Data Fixtures
+      // ========================================================================
+      const SWARM_NODES = [
+        {
+          id: "my-lisp-1",
+          name: "my-lisp-1",
+          port: 9101,
+          role: "Core Lisp VM / Semantic Oracle",
+          repo: "my-lisp",
+          layer: "Layer 6/5",
+          latency: 1.2,
+          tasks: 82,
+          cpu: 14.5,
+          mem: 128,
+        },
+        {
+          id: "fpga-lisp-1",
+          name: "fpga-lisp-1",
+          port: 9102,
+          role: "Hardware Synthesizer / ALU Co-proc",
+          repo: "fpga-lisp",
+          layer: "Layer 6",
+          latency: 0.8,
+          tasks: 38,
+          cpu: 8.2,
+          mem: 64,
+        },
+        {
+          id: "cml-1",
+          name: "cml-1",
+          port: 9103,
+          role: "CML Compiler Lowering Middle-End",
+          repo: "cml",
+          layer: "Layer 6",
+          latency: 1.5,
+          tasks: 44,
+          cpu: 21.0,
+          mem: 195,
+        },
+        {
+          id: "my-idea-1",
+          name: "my-idea-1",
+          port: 9104,
+          role: "IDE & Visual System Observatory",
+          repo: "my-idea",
+          layer: "Layer 6",
+          latency: 1.8,
+          tasks: 41,
+          cpu: 18.7,
+          mem: 245,
+        },
+        {
+          id: "my-lisp-panini-1",
+          name: "my-lisp-panini-1",
+          port: 9106,
+          role: "Panini Grammar Machine / Derivation IR",
+          repo: "my-lisp-panini",
+          layer: "Layer 2/5",
+          latency: 2.1,
+          tasks: 46,
+          cpu: 28.4,
+          mem: 312,
+        },
+        {
+          id: "shiva-sutras-1",
+          name: "shiva-sutras-1",
+          port: 9107,
+          role: "Phonetic Engine / UPC-8 & PVC-16",
+          repo: "shiva-sutras",
+          layer: "Layer 1/6",
+          latency: 0.9,
+          tasks: 47,
+          cpu: 11.2,
+          mem: 88,
+        },
+      ]
+
+      const DERIVATIONS = {
+        bhavati: {
+          target: "भवति (bhavati)",
+          states: [
+            {
+              id: "S0",
+              terms: ["√bhū (dhātu)"],
+              hash: "state:sha256:d8c5208bcae41a0ba1a29f8f2b7d483fb3ceb8b09d0cb093ffea75bbcaee1ea7",
+              rule: "Input root √bhū",
+            },
+            {
+              id: "S1",
+              terms: ["bhū", "+laṭ (lakāra)"],
+              hash: "state:sha256:a6b610c14b7e8d75cf701be5e921d01ee3fdf9bcf693e506990d0b04c86ec596",
+              rule: "3.2.123 vartamāne laṭ (Present tense)",
+            },
+            {
+              id: "S2",
+              terms: ["bhū", "+tip (tiṅ)"],
+              hash: "state:sha256:7bc59d81d2dfbc1cf8da294c73a216db8a13ef2b8df11559eeecfc316c4c0174",
+              rule: "3.4.78 tiṅ-ādeśa (3rd singular parasmaipada)",
+            },
+            {
+              id: "S3",
+              terms: ["bhū", "+ti"],
+              hash: "state:sha256:b1ec7daea41e06d649da391b1a7d6560daaf47aa6a4387d8cb27efc90b63cbb0",
+              rule: "1.3.9 tasya lopaḥ (Elides p it-marker)",
+            },
+            {
+              id: "S4",
+              terms: ["bhū", "+śap", "+ti"],
+              hash: "state:sha256:1a84f339cf01cb4d14210459c3d40ef6731be7a7bf734e40e6573c52e8055627",
+              rule: "3.1.68 kartari śap (Inserts vikaraṇa)",
+            },
+            {
+              id: "S5",
+              terms: ["bhū", "+a", "+ti"],
+              hash: "state:sha256:56bce457c1d3bf30f04c643b1859c25db94474b34b6b6685718dfd374aa3e843",
+              rule: "3.4.113 sārvadhātukam (śap -> a)",
+            },
+            {
+              id: "S6",
+              terms: ["bho", "+a", "+ti"],
+              hash: "state:sha256:0d18d4512e0e0f523173d12d09ff93ff790f977beaece5f7fe51dc1b764bfe47",
+              rule: "7.3.84 sārvadhātukārdhadhātukayoḥ (Guṇa ū -> o)",
+            },
+            {
+              id: "S7",
+              terms: ["bhav", "+a", "+ti"],
+              hash: "state:sha256:8f4c281df6be48a5df9ee2ca531db5caebbc8b6fe2d721fa6252bf466986427d",
+              rule: "6.1.78 eco 'yavāyāvaḥ (Sandhi o -> av)",
+            },
+            {
+              id: "S8",
+              terms: ["bhavati (Pada)"],
+              hash: "state:sha256:e647bc51b9e6f3128ef35b2e95a9992d9dcfdcb95e1e1a539bc27fa7a26f8664",
+              rule: "1.4.14 suptiṅantaṁ padam (Valid Pada)",
+            },
+          ],
+        },
+        dadati: {
+          target: "ददाति (dadāti)",
+          states: [
+            {
+              id: "S0",
+              terms: ["√dā (juhotyādi)"],
+              hash: "state:sha256:4b9101f3b0e35261d7b322a3683fba227653bbd0a3d46386c67fa128adbc44e1",
+              rule: "Input root √dā",
+            },
+            {
+              id: "S1",
+              terms: ["dā", "+laṭ"],
+              hash: "state:sha256:5c83b8909187a4de88d927a4e6bbcbcfd263914a8b7c4d51b3ca00d7fae01931",
+              rule: "3.2.123 vartamāne laṭ",
+            },
+            {
+              id: "S2",
+              terms: ["dā", "+ti"],
+              hash: "state:sha256:773ab485be61d67a6d10c144e0573e86cbca388d75cf7940ee95a947bc18a514",
+              rule: "3.4.78 tiṅ-ādeśa",
+            },
+            {
+              id: "S3",
+              terms: ["dā", "(Ślu)", "+ti"],
+              hash: "state:sha256:99f8d17baae7752e5d95d18d4512e0e0f523173d12d09ff93ff790f977beaece",
+              rule: "2.4.75 juhotyādibhyaḥ śluḥ (Apavāda blocks 3.1.68)",
+            },
+            {
+              id: "S4",
+              terms: ["dā", "+dā", "+ti"],
+              hash: "state:sha256:31b1a7d6560daaf47aa6a4387d8cb27efc90b63cbb01a84f339cf01cb4d14210",
+              rule: "6.1.10 ślau (Reduplication dā -> dā+dā)",
+            },
+            {
+              id: "S5",
+              terms: ["da", "+dā", "+ti"],
+              hash: "state:sha256:56bce457c1d3bf30f04c643b1859c25db94474b34b6b6685718dfd374aa3e843",
+              rule: "7.4.59 hrasvaḥ (Shortens abhyāsa dā -> da)",
+            },
+            {
+              id: "S6",
+              terms: ["dadāti (Pada)"],
+              hash: "state:sha256:1a84f339cf01cb4d14210459c3d40ef6731be7a7bf734e40e6573c52e8055627",
+              rule: "1.4.14 suptiṅantaṁ padam",
+            },
+          ],
+        },
+      }
+
+      const PHONEMES = {
+        a: { deva: "अ", pvc: 0x0003, sthana: "Kaṇṭhya (Velar)", prayatna: "Vivṛta", isVow: true, upc8: "0x00" },
+        i: {
+          deva: "इ",
+          pvc: 0x0005,
+          sthana: "Tālavya (Palatal)",
+          prayatna: "Spṛṣṭa-vivṛta",
+          isVow: true,
+          upc8: "0x01",
+        },
+        u: { deva: "उ", pvc: 0x0021, sthana: "Oṣṭhya (Labial)", prayatna: "Vivṛta", isVow: true, upc8: "0x02" },
+        k: {
+          deva: "क्",
+          pvc: 0x0042,
+          sthana: "Kaṇṭhya (Velar)",
+          prayatna: "Spṛṣṭa, Aghoṣa",
+          isVow: false,
+          upc8: "0x19",
+        },
+        t_pal: {
+          deva: "т'",
+          pvc: 0x4048,
+          sthana: "Dantya + Palatalized",
+          prayatna: "Spṛṣṭa, M'yakiy",
+          isVow: false,
+          upc8: "0x3D",
+        },
+      }
+
+      // ========================================================================
+      // State Management & Navigation
+      // ========================================================================
+      let activeTab = "topology"
+      let currentDrv = "bhavati"
+      let currentStep = 0
+      let isPlaying = false
+      let playTimer = null
+      let selectedPhoneme = "a"
+      let selectedSavB = "i"
+
+      function switchTab(tabId) {
+        activeTab = tabId
+        document.querySelectorAll(".tab-pane").forEach((p) => (p.style.display = "none"))
+        document.getElementById("tab-" + tabId).style.display = "block"
+        document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"))
+        event.target.classList.add("active")
+        logIPC("switch_tab", "Switched view to " + tabId)
+      }
+
+      function logIPC(cmd, msg) {
+        const container = document.getElementById("ipcLogContainer")
+        if (!container) return
+        const row = document.createElement("div")
+        row.innerHTML = `<span style="color:#64748b;">${new Date().toLocaleTimeString()}</span> <strong style="color:var(--accent);">${cmd}</strong> <span style="color:#cbd5e1;">${msg}</span>`
+        container.prepend(row)
+      }
+
+      // ========================================================================
+      // Canvas Mesh Visualizer
+      // ========================================================================
+      function initCanvas() {
+        const canvas = document.getElementById("meshCanvas")
+        if (!canvas) return
+        const ctx = canvas.getContext("2d")
+        let tick = 0
+
+        function draw() {
+          tick += 0.03
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+          // Center ring
+          const cx = 380,
+            cy = 230,
+            rad = 150
+          ctx.beginPath()
+          ctx.arc(cx, cy, 50, 0, Math.PI * 2)
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.2)"
+          ctx.setLineDash([4, 4])
+          ctx.stroke()
+          ctx.setLineDash([])
+
+          ctx.font = "11px monospace"
+          ctx.fillStyle = "#64748b"
+          ctx.textAlign = "center"
+          ctx.fillText("SWARM MESH", cx, cy - 4)
+          ctx.fillStyle = "#38bdf8"
+          ctx.font = "bold 11px monospace"
+          ctx.fillText(":9101 - :9107", cx, cy + 12)
+
+          // Nodes coordinates
+          const positions = SWARM_NODES.map((node, i) => {
+            const ang = (i / SWARM_NODES.length) * Math.PI * 2 - Math.PI / 2
+            return {
+              x: cx + Math.cos(ang) * rad,
+              y: cy + Math.sin(ang) * rad,
+              node,
             }
-          });
-        });
+          })
 
-        // Draw Node circles
-        positions.forEach(p => {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 24, 0, Math.PI * 2);
-          ctx.fillStyle = '#111827';
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 2;
-          ctx.fill();
-          ctx.stroke();
+          // Draw connections & traveling pulses
+          positions.forEach((src, sIdx) => {
+            positions.forEach((tgt, tIdx) => {
+              if (sIdx < tIdx) {
+                ctx.beginPath()
+                ctx.moveTo(src.x, src.y)
+                ctx.lineTo(tgt.x, tgt.y)
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.15)"
+                ctx.lineWidth = 1
+                ctx.stroke()
 
-          // Green online dot
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-          ctx.fillStyle = '#34d399';
-          ctx.fill();
+                const pulseT = (tick * 0.7 + (sIdx + tIdx) * 0.2) % 1
+                const px = src.x + (tgt.x - src.x) * pulseT
+                const py = src.y + (tgt.y - src.y) * pulseT
+                ctx.beginPath()
+                ctx.arc(px, py, 2.5, 0, Math.PI * 2)
+                ctx.fillStyle = "#38bdf8"
+                ctx.fill()
+              }
+            })
+          })
 
-          ctx.textAlign = 'center';
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 11px sans-serif';
-          ctx.fillText(p.node.name, p.x, p.y - 30);
+          // Draw Node circles
+          positions.forEach((p) => {
+            ctx.beginPath()
+            ctx.arc(p.x, p.y, 24, 0, Math.PI * 2)
+            ctx.fillStyle = "#111827"
+            ctx.strokeStyle = "#38bdf8"
+            ctx.lineWidth = 2
+            ctx.fill()
+            ctx.stroke()
 
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = '10px monospace';
-          ctx.fillText(`:${p.node.port}`, p.x, p.y + 36);
-        });
+            // Green online dot
+            ctx.beginPath()
+            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
+            ctx.fillStyle = "#34d399"
+            ctx.fill()
 
-        requestAnimationFrame(draw);
+            ctx.textAlign = "center"
+            ctx.fillStyle = "#ffffff"
+            ctx.font = "bold 11px sans-serif"
+            ctx.fillText(p.node.name, p.x, p.y - 30)
+
+            ctx.fillStyle = "#38bdf8"
+            ctx.font = "10px monospace"
+            ctx.fillText(`:${p.node.port}`, p.x, p.y + 36)
+          })
+
+          requestAnimationFrame(draw)
+        }
+        draw()
       }
-      draw();
-    }
 
-    // ========================================================================
-    // Render Nodes & Task List
-    // ========================================================================
-    function renderNodes() {
-      const container = document.getElementById('nodesContainer');
-      container.innerHTML = SWARM_NODES.map(n => `
+      // ========================================================================
+      // Render Nodes & Task List
+      // ========================================================================
+      function renderNodes() {
+        const container = document.getElementById("nodesContainer")
+        container.innerHTML = SWARM_NODES.map(
+          (n) => `
         <div class="node-card">
           <div style="display:flex; justify-content:space-between; align-items:start;">
             <div>
@@ -640,19 +1039,47 @@
             <span>REPO: <strong style="color:var(--purple);">${n.repo}</strong></span>
           </div>
         </div>
-      `).join('');
-    }
+      `,
+        ).join("")
+      }
 
-    function renderTasks() {
-      const container = document.getElementById('tasksList');
-      const sampleTasks = [
-        { id: 'TAURICODE-SWARM-DASHBOARD', node: 'tauricode', title: 'Swarm Mesh Dashboard & Live DAG Telemetry', status: 'COMPLETED' },
-        { id: 'CML-PHONETIC-LOWERING', node: 'cml-1', title: '64-bit Bitmask & PVC-16 Constant Folding Lowering', status: 'COMPLETED' },
-        { id: 'FPGA-ALU-PHONETIC-CORE', node: 'fpga-lisp-1', title: 'Synthesizable Verilog 1-Cycle Savarṇa Unit on Tang 25K', status: 'COMPLETED' },
-        { id: 'PANINI-PROOF-GRAPH', node: 'my-lisp-panini-1', title: 'Canonical Derivation Proof Generator & Paribhāṣā Resolver', status: 'COMPLETED' },
-        { id: 'SHIVA-UPC8-ADR002', node: 'shiva-sutras-1', title: 'ADR-002 Ratification & Marker Collision Resolution', status: 'COMPLETED' }
-      ];
-      container.innerHTML = sampleTasks.map(t => `
+      function renderTasks() {
+        const container = document.getElementById("tasksList")
+        const sampleTasks = [
+          {
+            id: "TAURICODE-SWARM-DASHBOARD",
+            node: "tauricode",
+            title: "Swarm Mesh Dashboard & Live DAG Telemetry",
+            status: "COMPLETED",
+          },
+          {
+            id: "CML-PHONETIC-LOWERING",
+            node: "cml-1",
+            title: "64-bit Bitmask & PVC-16 Constant Folding Lowering",
+            status: "COMPLETED",
+          },
+          {
+            id: "FPGA-ALU-PHONETIC-CORE",
+            node: "fpga-lisp-1",
+            title: "Synthesizable Verilog 1-Cycle Savarṇa Unit on Tang 25K",
+            status: "COMPLETED",
+          },
+          {
+            id: "PANINI-PROOF-GRAPH",
+            node: "my-lisp-panini-1",
+            title: "Canonical Derivation Proof Generator & Paribhāṣā Resolver",
+            status: "COMPLETED",
+          },
+          {
+            id: "SHIVA-UPC8-ADR002",
+            node: "shiva-sutras-1",
+            title: "ADR-002 Ratification & Marker Collision Resolution",
+            status: "COMPLETED",
+          },
+        ]
+        container.innerHTML = sampleTasks
+          .map(
+            (t) => `
         <div style="background:#030712; border:1px solid #1f2937; border-radius:6px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11px;">
           <div>
             <strong style="color:var(--accent);">${t.id}</strong> · <span style="color:var(--purple);">${t.node}</span>
@@ -660,151 +1087,171 @@
           </div>
           <span class="badge badge-ok">${t.status}</span>
         </div>
-      `).join('');
-    }
+      `,
+          )
+          .join("")
+      }
 
-    // ========================================================================
-    // Derivation DAG Logic
-    // ========================================================================
-    function loadDerivation(drvId) {
-      currentDrv = drvId;
-      currentStep = 0;
-      isPlaying = false;
-      document.getElementById('btnDrvBhavati').className = drvId === 'bhavati' ? 'btn btn-primary' : 'btn';
-      document.getElementById('btnDrvDadati').className = drvId === 'dadati' ? 'btn btn-primary' : 'btn';
-      renderDerivation();
-      logIPC('query_derivation_trace', 'Loaded ' + DERIVATIONS[drvId].target);
-    }
+      // ========================================================================
+      // Derivation DAG Logic
+      // ========================================================================
+      function loadDerivation(drvId) {
+        currentDrv = drvId
+        currentStep = 0
+        isPlaying = false
+        document.getElementById("btnDrvBhavati").className = drvId === "bhavati" ? "btn btn-primary" : "btn"
+        document.getElementById("btnDrvDadati").className = drvId === "dadati" ? "btn btn-primary" : "btn"
+        renderDerivation()
+        logIPC("query_derivation_trace", "Loaded " + DERIVATIONS[drvId].target)
+      }
 
-    function renderDerivation() {
-      const data = DERIVATIONS[currentDrv];
-      const ribbon = document.getElementById('dagRibbon');
-      ribbon.innerHTML = data.states.map((st, idx) => `
-        <div class="step-node ${idx === currentStep ? 'active' : (idx < currentStep ? 'done' : '')}" onclick="setStep(${idx})">
+      function renderDerivation() {
+        const data = DERIVATIONS[currentDrv]
+        const ribbon = document.getElementById("dagRibbon")
+        ribbon.innerHTML = data.states
+          .map(
+            (st, idx) => `
+        <div class="step-node ${idx === currentStep ? "active" : idx < currentStep ? "done" : ""}" onclick="setStep(${idx})">
           S${idx}
         </div>
-      `).join('');
+      `,
+          )
+          .join("")
 
-      document.getElementById('stepIndicator').innerText = `Step ${currentStep + 1} of ${data.states.length}`;
+        document.getElementById("stepIndicator").innerText = `Step ${currentStep + 1} of ${data.states.length}`
 
-      const activeSt = data.states[currentStep];
-      document.getElementById('stateTerms').innerHTML = activeSt.terms.map(t => `
+        const activeSt = data.states[currentStep]
+        document.getElementById("stateTerms").innerHTML = activeSt.terms
+          .map(
+            (t) => `
         <span style="background:#1e293b; border:1px solid #334155; padding:6px 10px; border-radius:6px; font-family:var(--font-mono); font-size:13px; font-weight:bold; color:var(--accent);">
           ${t}
         </span>
-      `).join('');
-      document.getElementById('stateHash').innerText = activeSt.hash;
-      document.getElementById('ruleContent').innerHTML = `
+      `,
+          )
+          .join("")
+        document.getElementById("stateHash").innerText = activeSt.hash
+        document.getElementById("ruleContent").innerHTML = `
         <div style="font-size:14px; font-weight:bold; color:var(--amber); margin-bottom:4px;">${activeSt.rule}</div>
         <p style="font-size:11px; color:#cbd5e1; line-height:1.5;">Immutable cryptographic state certificate verified under ECA-007.</p>
-      `;
-    }
-
-    function setStep(idx) {
-      currentStep = idx;
-      renderDerivation();
-    }
-
-    function stepDerivation(delta) {
-      const max = DERIVATIONS[currentDrv].states.length - 1;
-      currentStep = Math.min(max, Math.max(0, currentStep + delta));
-      renderDerivation();
-    }
-
-    function togglePlay() {
-      isPlaying = !isPlaying;
-      document.getElementById('playBtn').innerText = isPlaying ? '⏸ Pause' : '▶ Play';
-      if (isPlaying) {
-        playTimer = setInterval(() => {
-          const max = DERIVATIONS[currentDrv].states.length - 1;
-          if (currentStep >= max) {
-            togglePlay();
-          } else {
-            stepDerivation(1);
-          }
-        }, 1200);
-      } else {
-        clearInterval(playTimer);
+      `
       }
-    }
 
-    // ========================================================================
-    // Phonetics Workbench Logic
-    // ========================================================================
-    function initPhonetics() {
-      const picker = document.getElementById('phonemePicker');
-      picker.innerHTML = Object.keys(PHONEMES).map(k => `
-        <button class="btn ${k === selectedPhoneme ? 'btn-primary' : ''}" onclick="selectPhoneme('${k}')">
+      function setStep(idx) {
+        currentStep = idx
+        renderDerivation()
+      }
+
+      function stepDerivation(delta) {
+        const max = DERIVATIONS[currentDrv].states.length - 1
+        currentStep = Math.min(max, Math.max(0, currentStep + delta))
+        renderDerivation()
+      }
+
+      function togglePlay() {
+        isPlaying = !isPlaying
+        document.getElementById("playBtn").innerText = isPlaying ? "⏸ Pause" : "▶ Play"
+        if (isPlaying) {
+          playTimer = setInterval(() => {
+            const max = DERIVATIONS[currentDrv].states.length - 1
+            if (currentStep >= max) {
+              togglePlay()
+            } else {
+              stepDerivation(1)
+            }
+          }, 1200)
+        } else {
+          clearInterval(playTimer)
+        }
+      }
+
+      // ========================================================================
+      // Phonetics Workbench Logic
+      // ========================================================================
+      function initPhonetics() {
+        const picker = document.getElementById("phonemePicker")
+        picker.innerHTML = Object.keys(PHONEMES)
+          .map(
+            (k) => `
+        <button class="btn ${k === selectedPhoneme ? "btn-primary" : ""}" onclick="selectPhoneme('${k}')">
           <span style="font-size:14px; margin-right:4px;">${PHONEMES[k].deva}</span> ${k}
         </button>
-      `).join('');
+      `,
+          )
+          .join("")
 
-      const savSelect = document.getElementById('savSoundBSelect');
-      savSelect.innerHTML = Object.keys(PHONEMES).map(k => `
-        <option value="${k}" ${k === selectedSavB ? 'selected' : ''}>${k} (${PHONEMES[k].deva})</option>
-      `).join('');
+        const savSelect = document.getElementById("savSoundBSelect")
+        savSelect.innerHTML = Object.keys(PHONEMES)
+          .map(
+            (k) => `
+        <option value="${k}" ${k === selectedSavB ? "selected" : ""}>${k} (${PHONEMES[k].deva})</option>
+      `,
+          )
+          .join("")
 
-      renderPhonemeDetails();
-    }
+        renderPhonemeDetails()
+      }
 
-    function selectPhoneme(k) {
-      selectedPhoneme = k;
-      initPhonetics();
-      logIPC('stream_phoneme_vector', 'Inspecting phoneme ' + k);
-    }
+      function selectPhoneme(k) {
+        selectedPhoneme = k
+        initPhonetics()
+        logIPC("stream_phoneme_vector", "Inspecting phoneme " + k)
+      }
 
-    function renderPhonemeDetails() {
-      const p = PHONEMES[selectedPhoneme];
-      document.getElementById('pvcHex').innerText = '0x' + p.pvc.toString(16).toUpperCase().padStart(4, '0');
+      function renderPhonemeDetails() {
+        const p = PHONEMES[selectedPhoneme]
+        document.getElementById("pvcHex").innerText = "0x" + p.pvc.toString(16).toUpperCase().padStart(4, "0")
 
-      const bitsContainer = document.getElementById('pvcBits');
-      bitsContainer.innerHTML = Array.from({ length: 16 }).map((_, i) => {
-        const bit = 15 - i;
-        const isSet = (p.pvc >> bit) & 1;
-        return `<div class="bit-btn ${isSet ? 'active' : ''}">${bit}<br/><strong>${isSet}</strong></div>`;
-      }).join('');
+        const bitsContainer = document.getElementById("pvcBits")
+        bitsContainer.innerHTML = Array.from({ length: 16 })
+          .map((_, i) => {
+            const bit = 15 - i
+            const isSet = (p.pvc >> bit) & 1
+            return `<div class="bit-btn ${isSet ? "active" : ""}">${bit}<br/><strong>${isSet}</strong></div>`
+          })
+          .join("")
 
-      document.getElementById('phonemeDetails').innerHTML = `
+        document.getElementById("phonemeDetails").innerHTML = `
         <div>UPC-8 Code: <strong style="color:var(--emerald);">${p.upc8}</strong></div>
-        <div>Class: <strong style="color:var(--accent);">${p.isVow ? 'VOWEL (ac)' : 'CONSONANT (hal)'}</strong></div>
+        <div>Class: <strong style="color:var(--accent);">${p.isVow ? "VOWEL (ac)" : "CONSONANT (hal)"}</strong></div>
         <div>Sthāna (Place): <strong style="color:var(--purple);">${p.sthana}</strong></div>
         <div>Prayatna (Manner): <strong style="color:var(--amber);">${p.prayatna}</strong></div>
-      `;
+      `
 
-      document.getElementById('savSoundA').innerText = `${selectedPhoneme} (${p.deva})`;
-      updateSavarnaTest();
-    }
-
-    function updateSavarnaTest() {
-      selectedSavB = document.getElementById('savSoundBSelect').value;
-      const a = PHONEMES[selectedPhoneme];
-      const b = PHONEMES[selectedSavB];
-
-      const isSavarna = (a.pvc & 0x003e) === (b.pvc & 0x003e) && (a.pvc & 0x0041) === (b.pvc & 0x0041);
-      const badge = document.getElementById('savarnaBadge');
-      if (isSavarna) {
-        badge.style.background = '#064e3b';
-        badge.style.color = '#34d399';
-        badge.style.border = '1px solid #059669';
-        badge.innerText = 'SAVARṆA (HOMOGENEOUS) · 1 CYCLE ALU MATCH';
-      } else {
-        badge.style.background = '#450a0a';
-        badge.style.color = '#f87171';
-        badge.style.border = '1px solid #dc2626';
-        badge.innerText = 'ASAVARṆA (DISTINCT PLACE / MANNER)';
+        document.getElementById("savSoundA").innerText = `${selectedPhoneme} (${p.deva})`
+        updateSavarnaTest()
       }
-    }
 
-    // Initialize on load
-    window.addEventListener('DOMContentLoaded', () => {
-      initCanvas();
-      renderNodes();
-      renderTasks();
-      loadDerivation('bhavati');
-      initPhonetics();
-      logIPC('init', 'TauriCode Swarm Workbench Initialized');
-      logIPC('get_swarm_topology', 'Discovered 6 active nodes on ports 9101-9107');
-    });
-  </script>
-</body>
+      function updateSavarnaTest() {
+        selectedSavB = document.getElementById("savSoundBSelect").value
+        const a = PHONEMES[selectedPhoneme]
+        const b = PHONEMES[selectedSavB]
+
+        const isSavarna = (a.pvc & 0x003e) === (b.pvc & 0x003e) && (a.pvc & 0x0041) === (b.pvc & 0x0041)
+        const badge = document.getElementById("savarnaBadge")
+        if (isSavarna) {
+          badge.style.background = "#064e3b"
+          badge.style.color = "#34d399"
+          badge.style.border = "1px solid #059669"
+          badge.innerText = "SAVARṆA (HOMOGENEOUS) · 1 CYCLE ALU MATCH"
+        } else {
+          badge.style.background = "#450a0a"
+          badge.style.color = "#f87171"
+          badge.style.border = "1px solid #dc2626"
+          badge.innerText = "ASAVARṆA (DISTINCT PLACE / MANNER)"
+        }
+      }
+
+      // Initialize on load
+      window.addEventListener("DOMContentLoaded", () => {
+        initCanvas()
+        renderNodes()
+        renderTasks()
+        loadDerivation("bhavati")
+        initPhonetics()
+        logIPC("init", "TauriCode Swarm Workbench Initialized")
+        logIPC("get_swarm_topology", "Discovered 6 active nodes on ports 9101-9107")
+      })
+    </script>
+  </body>
 </html>

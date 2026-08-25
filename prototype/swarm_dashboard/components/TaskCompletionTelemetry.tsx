@@ -3,11 +3,11 @@
  * Displays capability distribution, node completion ratios, and recent execution events.
  */
 
-import React from 'react';
-import { TaskStats } from '../types';
+import React from "react"
+import { TaskStats } from "../types"
 
 interface TaskCompletionTelemetryProps {
-  stats: TaskStats;
+  stats: TaskStats
 }
 
 export const TaskCompletionTelemetry: React.FC<TaskCompletionTelemetryProps> = ({ stats }) => {
@@ -61,12 +61,14 @@ export const TaskCompletionTelemetry: React.FC<TaskCompletionTelemetryProps> = (
           </h4>
           <div className="space-y-3">
             {Object.entries(stats.nodeDistribution).map(([node, count]) => {
-              const pct = ((count / stats.totalCompleted) * 100).toFixed(1);
+              const pct = ((count / stats.totalCompleted) * 100).toFixed(1)
               return (
                 <div key={node} className="space-y-1">
                   <div className="flex justify-between text-xs font-mono">
                     <span className="text-slate-300 font-bold">{node}</span>
-                    <span className="text-slate-400">{count} tasks ({pct}%)</span>
+                    <span className="text-slate-400">
+                      {count} tasks ({pct}%)
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                     <div
@@ -75,7 +77,7 @@ export const TaskCompletionTelemetry: React.FC<TaskCompletionTelemetryProps> = (
                     />
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         </div>
@@ -87,7 +89,7 @@ export const TaskCompletionTelemetry: React.FC<TaskCompletionTelemetryProps> = (
           </h4>
           <div className="space-y-3">
             {Object.entries(stats.capabilityDistribution).map(([cap, count]) => {
-              const pct = ((count / stats.totalCompleted) * 100).toFixed(1);
+              const pct = ((count / stats.totalCompleted) * 100).toFixed(1)
               return (
                 <div key={cap} className="space-y-1">
                   <div className="flex justify-between text-xs font-mono">
@@ -101,7 +103,7 @@ export const TaskCompletionTelemetry: React.FC<TaskCompletionTelemetryProps> = (
                     />
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         </div>
@@ -153,5 +155,5 @@ export const TaskCompletionTelemetry: React.FC<TaskCompletionTelemetryProps> = (
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
