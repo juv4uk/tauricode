@@ -4,9 +4,13 @@
 mod adapter;
 mod events;
 mod lifecycle;
+#[cfg(any(test, feature = "mock"))]
+mod mock;
 mod types;
 
 pub use adapter::{AdapterError, AgentRuntimeAdapter};
 pub use events::{Event, OutputKind, ToolStatus};
 pub use lifecycle::{HandleRegistry, LifecycleState, TransitionError};
+#[cfg(any(test, feature = "mock"))]
+pub use mock::MockAdapter;
 pub use types::{Capabilities, Identity, RuntimeHandle, Status, TaskId, Workspace};

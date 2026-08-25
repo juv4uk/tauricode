@@ -88,8 +88,9 @@ pub struct Workspace {
 /// (M2.1) — process lifecycle and identity freshness are kept separate on
 /// purpose, matching how `ecosystem-observer` already keeps them
 /// separate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Status {
+    #[default]
     Fresh,
     Stale,
     Orphaned,
