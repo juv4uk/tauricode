@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "io.tauricode.swarm-dashboard",
   "build": {
-    "frontendDist": "..",
+    "frontendDist": "../web",
     "devUrl": "http://localhost:1420"
   },
   "app": {
