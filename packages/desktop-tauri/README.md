@@ -60,6 +60,48 @@ LATER  whole agent ecosystem   — NOT attempted. Needs: contracts/tasks/
                                   tested.
 ```
 
+### Fresh-directory portability experiment — 2026-08-25
+
+Verified without any Rust source changes:
+
+- default env → original 6-repo ecosystem unchanged;
+- custom `ECOSYSTEM_ROOT` + `ECOSYSTEM_REPOS` → three unrelated repositories scanned;
+- clean repo on `main` → `Complete`, `dirty=false`;
+- dirty repo on `trunk` → `Complete`, `dirty=true`, correct changed path;
+- non-git directory → `Failed` for that repository only, no whole-scan crash.
+
+Therefore:
+
+```text
+core portable                    ✅
+observer desktop configurable    ✅ empirically verified
+whole ecosystem portable         ❌ not yet proven
+```
+
+This experiment proves portability of the observer/desktop scan
+boundary only. It does not prove portability of contracts/tasks/
+evidence or the full agent workstation.
+
+**Reproducible, not just described:** the experiment is a real,
+automated test —
+[`src-tauri/src/commands/snapshot.rs`](src-tauri/src/commands/snapshot.rs)'s
+`fresh_directory_portability_experiment` (in `#[cfg(test)] mod tests`).
+It creates the three repos for real via `git init`/`commit` in a temp
+directory, calls the exact same `resolve_root`/`parse_repos`/
+`discover_ecosystem` path the real Tauri command uses, and asserts on
+the real result. Reproduce it yourself:
+
+```sh
+cargo test --manifest-path packages/desktop-tauri/src-tauri/Cargo.toml \
+  fresh_directory_portability_experiment
+```
+
+(Doesn't need pkg-config/libwebkit2gtk — this one test doesn't touch
+the Tauri runtime itself, only the command layer's plain Rust logic —
+but building the crate at all still does, so a full Tauri toolchain is
+required to compile it either way; CI run 32865864898-class
+environments have this, most bare dev sandboxes don't.)
+
 ## What this slice actually does
 
 One Tauri command, `get_ecosystem_snapshot`, calls
