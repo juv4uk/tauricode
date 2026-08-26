@@ -21,4 +21,4 @@
     (description . "AgentRuntimeAdapter trait, MockAdapter, real OpenCodeAdapter, event normalization, task binding. M2.0-M2.9 done+pushed.")
     (done . t)
   ))
-))
+)))
