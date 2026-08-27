@@ -21,4 +21,10 @@
     (description . "AgentRuntimeAdapter trait, MockAdapter, real OpenCodeAdapter, event normalization, task binding. M2.0-M2.9 done+pushed.")
     (done . t)
   ))
+  ("TAURICODE-WSM-LANGUAGE-MAP" . (
+    (priority . 9.0)
+    (capabilities . (tauricode typescript lsp wsm))
+    (description . "Teach packages/opencode language detection that .wsm is canonical WSM source and .my/.lisp are supported aliases, so documents are not sent to LSP clients as plaintext. Add focused mapping and real LSP-routing tests; do not rename protocol files.")
+    (done . ())
+  ))
 )))
