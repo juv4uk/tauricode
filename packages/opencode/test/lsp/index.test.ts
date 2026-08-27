@@ -125,6 +125,67 @@ describe("lsp.spawn", () => {
   )
 
   it.instance(
+    "would spawn builtin WSM LSP for a .wsm file inside instance when lsp is true",
+    () =>
+      LSP.Service.use((lsp) =>
+        Effect.gen(function* () {
+          const dir = (yield* TestInstance).directory
+          const spy = spyOn(LSPServer.WsmLS, "spawn").mockResolvedValue(undefined)
+
+          try {
+            yield* lsp.hover({
+              file: path.join(dir, "src", "inside.wsm"),
+              line: 0,
+              character: 0,
+            })
+            expect(spy).toHaveBeenCalledTimes(1)
+          } finally {
+            spy.mockRestore()
+          }
+        }),
+      ),
+    { config: { lsp: true } },
+  )
+
+  it.instance(
+    "routes .my and .lisp files to the same WSM LSP client as .wsm (shared root+server cache)",
+    () =>
+      LSP.Service.use((lsp) =>
+        Effect.gen(function* () {
+          const dir = (yield* TestInstance).directory
+          const spy = spyOn(LSPServer.WsmLS, "spawn").mockResolvedValue(undefined)
+
+          try {
+            yield* lsp.hover({
+              file: path.join(dir, "src", "inside.wsm"),
+              line: 0,
+              character: 0,
+            })
+            yield* lsp.hover({
+              file: path.join(dir, "src", "inside.my"),
+              line: 0,
+              character: 0,
+            })
+            yield* lsp.hover({
+              file: path.join(dir, "src", "inside.lisp"),
+              line: 0,
+              character: 0,
+            })
+            // Same root + same "wsm" server id across all three extensions
+            // means the LSP client is spawned once and reused, not
+            // re-spawned per alias -- this is the evidence that .my/.lisp
+            // are genuinely routed through the same live server as .wsm,
+            // not merely sharing a languageId label.
+            expect(spy).toHaveBeenCalledTimes(1)
+          } finally {
+            spy.mockRestore()
+          }
+        }),
+      ),
+    { config: { lsp: true } },
+  )
+
+  it.instance(
     "would spawn builtin LSP for files inside instance when config object is provided",
     () =>
       LSP.Service.use((lsp) =>

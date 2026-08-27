@@ -1981,3 +1981,45 @@ export const JuliaLS: Info = {
     }
   },
 }
+
+// WSM (my-lisp ecosystem, ECO-DECISION-2026-08-27-MYLISP-WSM-RENAME):
+// .wsm is the canonical source extension, .my/.lisp remain supported
+// aliases (see language.ts's own extensionLanguageMap for the same
+// three-way mapping to the "wsm" languageId). This was previously a
+// real gap: language.ts already mapped all three extensions to "wsm"
+// but no server entry here ever spawned anything for that languageId,
+// so files never got real diagnostics/completion from a live
+// my-lisp-lsp process -- syntax highlighting only. repo.my (the
+// ecosystem's own swarm-contract file) is used as the project-root
+// marker where present, matching every other repo.my-bearing
+// repository in this ecosystem; falls back to the git worktree root,
+// then the instance directory, same three-tier fallback Nixd uses
+// above for repos with no single canonical marker file.
+export const WsmLS: Info = {
+  id: "wsm",
+  extensions: [".wsm", ".my", ".lisp"],
+  root: async (file, ctx) => {
+    const repoRoot = await NearestRoot(["repo.my"])(file, ctx)
+    if (repoRoot && repoRoot !== ctx.directory) return repoRoot
+    // ctx.worktree is "/" for non-git projects (see instance-context.ts's
+    // own containsPath comment) -- that is a "no real boundary" sentinel,
+    // not a legitimate LSP root, and must never be handed to a server as
+    // its scan root: my-lisp-lsp indexes every .wsm/.my/.lisp file under
+    // its root on initialize, so "/" means it recursively walks the whole
+    // filesystem (confirmed live: it wedged scanning /mnt/c/Windows/WinSxS
+    // under WSL) instead of ever responding to the client.
+    if (ctx.worktree && ctx.worktree !== "/" && ctx.worktree !== ctx.directory) return ctx.worktree
+    return ctx.directory
+  },
+  async spawn(root) {
+    const bin = which("my-lisp-lsp")
+    if (!bin) {
+      return
+    }
+    return {
+      process: spawn(bin, {
+        cwd: root,
+      }),
+    }
+  },
+}
