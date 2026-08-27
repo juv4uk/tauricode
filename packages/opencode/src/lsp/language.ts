@@ -118,4 +118,7 @@ export const LANGUAGE_EXTENSIONS: Record<string, string> = {
   ".nix": "nix",
   ".typ": "typst",
   ".typc": "typst",
+  ".wsm": "wsm",
+  ".my": "wsm",
+  ".lisp": "wsm",
 } as const
