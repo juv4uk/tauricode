@@ -14,4 +14,9 @@ if (!semver.satisfies(process.versions.bun, expectedBunVersionRange)) {
 }
 '
 
-bun turbo typecheck --concurrency=1
+# The full monorepo typecheck is intentionally owned by
+# .github/workflows/typecheck.yml on every push to dev. Running it here made
+# one tsgo process consume several GiB of RAM and could freeze the shared WSL
+# host before the push (and therefore CI) even started.
+git diff --check
+echo "pre-push: lightweight checks passed; full typecheck runs in GitHub Actions"
