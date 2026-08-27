@@ -24,7 +24,7 @@
   ("TAURICODE-WSM-LANGUAGE-MAP" . (
     (priority . 9.0)
     (capabilities . (tauricode typescript lsp wsm))
-    (description . "Teach packages/opencode language detection that .wsm is canonical WSM source and .my/.lisp are supported aliases, so documents are not sent to LSP clients as plaintext. Add focused mapping and real LSP-routing tests; do not rename protocol files.")
-    (done . ())
+    (description . "Teach packages/opencode language detection that .wsm is canonical WSM source and .my/.lisp are supported aliases, so documents are not sent to LSP clients as plaintext. Add focused mapping and real LSP-routing tests; do not rename protocol files. DONE: language mapping in commit 2afc6e7ee5; real WsmLS LSP server registration + tests (packages/opencode/test/lsp/language.test.ts, wsm-root.test.ts, index.test.ts) in commit e50822c2a7.")
+    (done . t)
   ))
 )))
