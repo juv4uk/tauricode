@@ -11,6 +11,7 @@
 `(done . ())`.
 
 Реально закрита двома комітами того ж дня:
+
 - `2afc6e7ee5` (06:50) — мапінг мови в `packages/opencode/src/lsp/language.ts:121-123`
 - `e50822c2a7` (14:35) — "feat(lsp): register WsmLS server so
   .wsm/.my/.lisp get real diagnostics/completion" — це відповідь на

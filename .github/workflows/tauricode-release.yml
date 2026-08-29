@@ -163,14 +163,7 @@ jobs:
 
   release:
     needs:
-      [
-        windows-desktop,
-        windows-console,
-        linux-desktop,
-        linux-console,
-        windows-official-desktop,
-        linux-official-desktop,
-      ]
+      [windows-desktop, windows-console, linux-desktop, linux-console, windows-official-desktop, linux-official-desktop]
     # Runs even if some targets failed - reports honestly on whichever
     # artifacts actually exist rather than requiring all four or none.
     if: always()
