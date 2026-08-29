@@ -23,6 +23,7 @@ Session.vim
 /opencode.json
 a.out
 target
+**/src-tauri/gen/schemas/
 .scripts
 .direnv/
 
