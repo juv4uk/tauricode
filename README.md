@@ -194,9 +194,29 @@ document wins.
 
 ## License and attribution
 
-Tauricode contains and/or derives portions of code from OpenCode.
+Tauricode is a mixed-provenance distribution. It contains and/or derives
+portions of code from OpenCode, while original WSM/Tauricode components are
+separately identified and licensed.
 
 Original OpenCode project: [anomalyco/opencode](https://github.com/anomalyco/opencode)
 
 Copyright and license notices from upstream code must be preserved
-where required. See `LICENSE` and repository history for details.
+where required. `LICENSE` contains the upstream OpenCode MIT notice.
+`LICENSE-WSM` contains Waldemar Sydiy M's MIT notice for original WSM work.
+`NOTICE` records the verified scope and the rule for mixed/unaudited files.
+
+## Ліцензія та атрибуція
+
+Tauricode має змішане походження. Частина коду успадкована або похідна від
+OpenCode, а оригінальні компоненти WSM/Tauricode позначаються й ліцензуються
+окремо.
+
+- `LICENSE` — upstream MIT notice OpenCode; він не видаляється з похідних
+  частин.
+- `LICENSE-WSM` — MIT notice Waldemar Sydiy M для оригінальної роботи WSM.
+- `NOTICE` — перевірений scope, provenance boundary і правило для змішаних або
+  ще не перевірених файлів.
+
+Локальний commit не робить upstream-файл повністю власним. Власна ліцензія
+застосовується лише до оригінального внеску; сторонні компоненти зберігають
+свої copyright та умови.

@@ -1,0 +1,54 @@
+Tauricode is a mixed-provenance distribution.
+
+Tauricode є дистрибутивом зі змішаним походженням коду.
+
+1. OpenCode-derived work / Похідна від OpenCode частина
+
+Files inherited or derived from anomalyco/opencode remain under the upstream
+MIT license and copyright notice in LICENSE. Local modifications do not erase
+or replace that notice. Package-specific upstream notices, including
+packages/http-recorder/LICENSE and packages/ui/LICENSE, also remain in force.
+
+Файли, успадковані або похідні від anomalyco/opencode, залишаються під MIT-
+ліцензією та copyright notice з кореневого LICENSE. Локальні зміни не стирають
+і не замінюють цей notice. Окремі upstream notices пакетів, зокрема
+packages/http-recorder/LICENSE і packages/ui/LICENSE, також зберігають силу.
+
+2. Original WSM/Tauricode work / Оригінальна робота WSM/Tauricode
+
+Original code written for the WSM ecosystem is Copyright (c) 2026 Waldemar
+Sydiy M and is licensed under the MIT terms in LICENSE-WSM. The following
+current directory-level scopes were verified as additions absent from the
+upstream branch and introduced in the juv4uk Tauricode history:
+
+- crates/ecosystem-observer/
+- packages/desktop-tauri/
+
+Оригінальний код, написаний для екосистеми WSM, має Copyright (c) 2026
+Waldemar Sydiy M і ліцензується за MIT-умовами з LICENSE-WSM. Наведені вище
+директорії перевірено як додані в історії juv4uk Tauricode й відсутні в
+upstream-гілці.
+
+This scope statement applies to original source and documentation in those
+directories. It does not claim copyright over third-party dependencies,
+generated dependency lock data, tool-generated boilerplate, fonts, icons, or
+other externally sourced material; those retain their own terms.
+
+Це визначення scope стосується оригінальних source і документації в цих
+директоріях. Воно не заявляє авторських прав на сторонні залежності, generated
+lock data, tool-generated boilerplate, шрифти, іконки чи інші зовнішні
+матеріали; для них діють власні умови.
+
+3. Mixed and unaudited files / Змішані та ще не перевірені файли
+
+A file modified from upstream is not reclassified as wholly original merely
+because it has a local commit. Until file-level provenance is recorded, keep
+the upstream notice and do not present the complete file as exclusively owned
+WSM work. Additional clean-room/original directories may be added to section 2
+only after history and source provenance are checked.
+
+Файл, змінений від upstream, не стає повністю оригінальним лише через локальний
+commit. До file-level перевірки походження upstream notice зберігається, а весь
+файл не подається як виключно власна робота WSM. Нові clean-room/original
+директорії можна додавати до розділу 2 лише після перевірки Git-історії та
+джерел.
