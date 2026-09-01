@@ -115,7 +115,12 @@ Empirically confirmed against the real repos on this machine
 states/remotes returned, 2 local processes observed — not predicted.
 
 A minimal, deliberately plain `web/index.html` calls the command and
-renders the result. This is **not** `packages/app` (the shared SolidJS
+renders the result. The current read-only view includes repository state,
+local processes, the configured Guard reference topics/`guard-ask` presence,
+legacy Guard path presence, and live `swarm-node` process instances. These
+last two remain deliberately weak claims: a path being present does not make
+it active, and process liveness does not prove delivery or mesh convergence.
+This is **not** `packages/app` (the shared SolidJS
 UI) — that integration is a separate, larger follow-up, not attempted
 in this slice, to avoid reworking an unfamiliar, substantial codebase
 in one unreviewed pass.
@@ -150,9 +155,9 @@ https://github.com/juv4uk/tauricode/releases/tag/t0.1.0.
 - `packages/app` (SolidJS) integration + `platform.ts` bridge.
 - `tauri-specta` typed bindings.
 - OpenCode sidecar wiring (`packages/opencode` as `externalBin`).
-- Guix state (levels 1-4), ecosystem contracts (needs the minimal
-  S-expr reader), evidence, and tasks — none of Stage 1's remaining
-  criteria beyond repository discovery + local runtime observation are
-  implemented in `ecosystem-observer` yet.
+- Guix state (levels 1-4), evidence, tasks, and wiring the already-parsed
+  contract facts into `EcosystemSnapshot`. Guard-reference and swarm-process
+  operational visibility are now present, but Guard verdicts, delivery, and
+  mesh convergence are deliberately not inferred by the observer.
 - my-idea boundary reconciliation.
 - Any installer/bundle packaging for this shell.

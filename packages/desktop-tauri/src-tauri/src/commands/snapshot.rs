@@ -11,7 +11,9 @@
 // Never mock/fixture data - the whole point of this package, as distinct
 // from prototype/swarm_dashboard/, is that this is real observation.
 
-use ecosystem_observer::{discover_ecosystem, DiscoverInput, EcosystemSnapshot};
+use ecosystem_observer::{
+    discover_ecosystem, DiscoverInput, EcosystemSnapshot, OperationalSources,
+};
 use std::path::PathBuf;
 
 /// Stage 1's declared observation scope
@@ -67,12 +69,18 @@ fn parse_repos(raw: Option<&str>) -> Vec<String> {
                 .map(String::from)
                 .collect();
             if repos.is_empty() {
-                DEFAULT_ECOSYSTEM_REPOS.iter().map(|s| s.to_string()).collect()
+                DEFAULT_ECOSYSTEM_REPOS
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect()
             } else {
                 repos
             }
         }
-        None => DEFAULT_ECOSYSTEM_REPOS.iter().map(|s| s.to_string()).collect(),
+        None => DEFAULT_ECOSYSTEM_REPOS
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
     }
 }
 
@@ -89,14 +97,33 @@ fn ecosystem_repos() -> Vec<String> {
     parse_repos(std::env::var("ECOSYSTEM_REPOS").ok().as_deref())
 }
 
+fn operational_sources(root: &std::path::Path) -> OperationalSources {
+    let coordination_root = std::env::var("ECOSYSTEM_COORDINATION_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("/home/agents/ecosystem"));
+    let guard_reference_path = std::env::var("ECOSYSTEM_GUARD_REFERENCE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| root.join("my-lisp/knowledge/guard-reference.wsm"));
+
+    OperationalSources {
+        guard_reference_path,
+        legacy_guard_paths: vec![
+            coordination_root.join("guard/guard.py"),
+            coordination_root.join("guard/constitution.rules.my"),
+        ],
+    }
+}
+
 /// IPC Command: one real, live `EcosystemSnapshot` scan of the
 /// configured sibling repos. Read-only — matches Stage 1's own explicit
 /// non-goals (no launch, no git mutation, no claim/release, no Guix
 /// mutation, no contract/evidence edit).
 #[tauri::command]
 pub async fn get_ecosystem_snapshot() -> Result<EcosystemSnapshot, String> {
+    let root = ecosystem_root();
     let input = DiscoverInput {
-        root: ecosystem_root(),
+        operational_sources: Some(operational_sources(&root)),
+        root,
         repositories: Some(ecosystem_repos()),
         identity_base_dir: None,
     };
@@ -215,23 +242,36 @@ mod tests {
             root: resolve_root(Some(root.to_str().unwrap())),
             repositories: Some(parse_repos(Some("repo-a,repo-b,repo-c"))),
             identity_base_dir: None,
+            operational_sources: None,
         };
         let snap = discover_ecosystem(input);
 
-        let a = snap.repositories.iter().find(|r| r.name == "repo-a").unwrap();
+        let a = snap
+            .repositories
+            .iter()
+            .find(|r| r.name == "repo-a")
+            .unwrap();
         assert_eq!(a.scan_status, ScanStatus::Complete);
         let a_git = a.git.as_ref().unwrap();
         assert_eq!(a_git.branch.as_deref(), Some("main"));
         assert!(!a_git.is_dirty);
 
-        let b = snap.repositories.iter().find(|r| r.name == "repo-b").unwrap();
+        let b = snap
+            .repositories
+            .iter()
+            .find(|r| r.name == "repo-b")
+            .unwrap();
         assert_eq!(b.scan_status, ScanStatus::Complete);
         let b_git = b.git.as_ref().unwrap();
         assert_eq!(b_git.branch.as_deref(), Some("trunk"));
         assert!(b_git.is_dirty);
         assert_eq!(b_git.changed_paths, vec!["README.md".to_string()]);
 
-        let c = snap.repositories.iter().find(|r| r.name == "repo-c").unwrap();
+        let c = snap
+            .repositories
+            .iter()
+            .find(|r| r.name == "repo-c")
+            .unwrap();
         assert_eq!(c.scan_status, ScanStatus::Failed);
         assert!(c.git.is_none());
         assert!(c.error.is_some());

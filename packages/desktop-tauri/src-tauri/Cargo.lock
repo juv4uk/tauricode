@@ -715,7 +715,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 [[package]]
 name = "ecosystem-observer"
 version = "0.1.0"
-source = "git+https://github.com/juv4uk/ecosystem-observer.git?rev=121b922b1ed4faca4333b6468b5f70949fc9eabf#121b922b1ed4faca4333b6468b5f70949fc9eabf"
+source = "git+https://github.com/juv4uk/ecosystem-observer.git?rev=3dea1a79978c6e52ecea63f77b1c50098d16b885#3dea1a79978c6e52ecea63f77b1c50098d16b885"
 dependencies = [
  "serde",
  "serde_json",

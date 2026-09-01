@@ -83,6 +83,17 @@
         color: var(--err);
         white-space: pre-wrap;
       }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin: 0.8rem 0;
+      }
+      .panel h2 {
+        font-size: 0.95rem;
+        margin: 0 0 0.5rem;
+      }
     </style>
   </head>
   <body>
@@ -94,6 +105,7 @@
     <button id="scan">Run scan</button>
     <div id="meta"></div>
     <div id="error"></div>
+    <div id="operations"></div>
     <div id="repos"></div>
 
     <script>
@@ -104,8 +116,10 @@
         const meta = document.getElementById("meta")
         const errEl = document.getElementById("error")
         const reposEl = document.getElementById("repos")
+        const operationsEl = document.getElementById("operations")
         errEl.textContent = ""
         reposEl.innerHTML = ""
+        operationsEl.innerHTML = ""
         if (!invoke) {
           errEl.textContent = "Not running inside the Tauri webview — __TAURI__ bridge unavailable."
           return
@@ -115,6 +129,31 @@
         try {
           const snap = await invoke("get_ecosystem_snapshot")
           meta.textContent = `scan ${snap.scan.scan_id} — started ${snap.scan.started_at}, finished ${snap.scan.finished_at} — ${snap.repositories.length} repos, ${snap.local_processes.length} local processes`
+          const guard = snap.guard
+          const swarm = snap.swarm_node
+          operationsEl.innerHTML = `
+            <div class="panel">
+              <h2>Guard reference</h2>
+              ${
+                guard
+                  ? `<pre>status: ${guard.status}
+source: ${guard.source_path}
+topics: ${guard.topics.length}
+guard-ask: ${guard.canonical_entry_point_present ?? "unknown"}
+legacy paths (presence only):
+${guard.legacy_paths.map((p) => `  ${p.exists ? "present" : "absent"}  ${p.path}`).join("\n") || "  (none configured)"}
+${guard.error ? "error: " + guard.error : ""}</pre>`
+                  : `<pre>not configured — unknown, not false</pre>`
+              }
+            </div>
+            <div class="panel">
+              <h2>swarm-node</h2>
+              <pre>probe: ${swarm.status}
+live instances: ${swarm.live_instances.length}
+${swarm.live_instances.map((n) => `  pid=${n.pid} cwd=${n.cwd ?? "unknown"}\n  ${n.command}`).join("\n") || "  (none observed)"}
+boundary: ${swarm.note}</pre>
+            </div>
+          `
           for (const repo of snap.repositories) {
             const div = document.createElement("div")
             div.className = "repo"
