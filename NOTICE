@@ -39,6 +39,19 @@ other externally sourced material; those retain their own terms.
 lock data, tool-generated boilerplate, шрифти, іконки чи інші зовнішні
 матеріали; для них діють власні умови.
 
+Known mixed file / Відомий mixed-файл:
+
+- `crates/ecosystem-observer/src/git_read.rs` contains a small
+  `GIT_SAFETY_FLAGS` configuration-value sequence copied from
+  `packages/opencode/src/git/index.ts`. The OpenCode MIT notice in `LICENSE`
+  remains applicable to that fragment. The surrounding Rust observer
+  implementation is recorded as original WSM work.
+- `crates/ecosystem-observer/src/git_read.rs` містить невелику послідовність
+  конфігураційних значень `GIT_SAFETY_FLAGS`, скопійовану з
+  `packages/opencode/src/git/index.ts`. Для цього фрагмента зберігається MIT
+  notice OpenCode з `LICENSE`; код Rust довкола observer-а зафіксовано як
+  оригінальну роботу WSM.
+
 3. Mixed and unaudited files / Змішані та ще не перевірені файли
 
 A file modified from upstream is not reclassified as wholly original merely

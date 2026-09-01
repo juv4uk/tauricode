@@ -9,11 +9,18 @@
      (origin . ecosystem)
      (description . "Enforce the DOCUMENTATION LANGUAGE / МОВА ДОКУМЕНТАЦІЇ policy. Every human-authored markdown file (README, memory, plans, architecture, research) MUST have a substantive Ukrainian translation. Identify English-only documents and translate them. Do not translate machine identifiers or immutable historical records. Ensure every new or edited markdown document is bilingual.")))
 
+  ("TAURICODE-OBSERVER-O0-CANONICAL-DEPENDENCY-SWITCH" . (
+    (priority . 10.0)
+    (capabilities . (tauricode rust observer licensing testing))
+    (origin . ecosystem)
+    (depends-on . ())
+    (description . "Switch Tauricode desktop-tauri to the canonical observer source at ecosystem/crates/ecosystem-observer after provenance audit 2026-09-01. Prove observer tests and Tauri snapshot parity, preserve OpenCode notice for the mixed Git safety-flags fragment, then remove the duplicate Tauricode crate only after the dependency path is live.")))
+
   ("TAURICODE-OBSERVER-O1-PROVENANCE-SNAPSHOT" . (
     (priority . 10.0)
     (capabilities . (tauricode rust observer testing))
     (origin . ecosystem)
-    (depends-on . ())
+    (depends-on . ("TAURICODE-OBSERVER-O0-CANONICAL-DEPENDENCY-SWITCH"))
     (description . "Replace ambiguous placeholder Git fields in EcosystemSnapshot with provenance-safe known/unknown probe results without changing domain authority. Add deterministic serialization fixtures proving that a failed dirty/remotes probe is UNKNOWN, never clean/empty. This is O1 in plans/TAURICODE-OBSERVER-WORKSTATION-ROADMAP.md.")))
 
   ("TAURICODE-OBSERVER-O2-TASK-EVIDENCE-SLICE" . (
