@@ -17,4 +17,4 @@ tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 # Canonical public observer source. The exact revision is pinned so a moving
 # branch cannot silently change Tauricode's observed-state contract.
-ecosystem-observer = { git = "https://github.com/juv4uk/ecosystem-observer.git", rev = "7920204387a24f3df77fc6b6e7106ba5ff7fe23d" }
+ecosystem-observer = { git = "https://github.com/juv4uk/ecosystem-observer.git", rev = "121b922b1ed4faca4333b6468b5f70949fc9eabf" }
