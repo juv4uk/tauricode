@@ -15,12 +15,6 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
-# Path dependency to the repo-root crate, not a copy under
-# crates/ecosystem-observer/ nested inside this tree - the ACCEPTED
-# architecture's own file-tree section was marked "proposal, nothing
-# created", and ecosystem-observer already exists at
-# crates/ecosystem-observer/ as real, tested Slice 1+2 code (predates
-# this package). Moving/duplicating it was a bigger, riskier decision
-# than this first slice needed - disclosed here rather than silently
-# deviating from the illustrative tree.
-ecosystem-observer = { path = "../../../crates/ecosystem-observer" }
+# Canonical public observer source. The exact revision is pinned so a moving
+# branch cannot silently change Tauricode's observed-state contract.
+ecosystem-observer = { git = "https://github.com/juv4uk/ecosystem-observer.git", rev = "7920204387a24f3df77fc6b6e7106ba5ff7fe23d" }
