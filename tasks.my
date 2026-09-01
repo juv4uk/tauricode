@@ -9,6 +9,48 @@
      (origin . ecosystem)
      (description . "Enforce the DOCUMENTATION LANGUAGE / МОВА ДОКУМЕНТАЦІЇ policy. Every human-authored markdown file (README, memory, plans, architecture, research) MUST have a substantive Ukrainian translation. Identify English-only documents and translate them. Do not translate machine identifiers or immutable historical records. Ensure every new or edited markdown document is bilingual.")))
 
+  ("TAURICODE-OBSERVER-O1-PROVENANCE-SNAPSHOT" . (
+    (priority . 10.0)
+    (capabilities . (tauricode rust observer testing))
+    (origin . ecosystem)
+    (depends-on . ())
+    (description . "Replace ambiguous placeholder Git fields in EcosystemSnapshot with provenance-safe known/unknown probe results without changing domain authority. Add deterministic serialization fixtures proving that a failed dirty/remotes probe is UNKNOWN, never clean/empty. This is O1 in plans/TAURICODE-OBSERVER-WORKSTATION-ROADMAP.md.")))
+
+  ("TAURICODE-OBSERVER-O2-TASK-EVIDENCE-SLICE" . (
+    (priority . 9.8)
+    (capabilities . (tauricode rust observer wsm testing))
+    (origin . ecosystem)
+    (depends-on . ("TAURICODE-OBSERVER-O1-PROVENANCE-SNAPSHOT"))
+    (description . "Add read-only typed tasks.my and evidence observation to the canonical snapshot. Preserve source/probe failures and perform no eval or mutation. Prove one real task end-to-end: source -> observer snapshot -> Tauri command -> desktop display with evidence reference.")))
+
+  ("TAURICODE-OBSERVER-O3-OPERATIONAL-MAP" . (
+    (priority . 9.6)
+    (capabilities . (tauricode rust typescript tauri ui testing))
+    (origin . ecosystem)
+    (depends-on . ("TAURICODE-OBSERVER-O2-TASK-EVIDENCE-SLICE"))
+    (description . "Build one read-only Tauri operational-map screen over fixtures and the real snapshot: repositories, live sessions, tasks/directions, and Guard findings/unknowns. Every status indicator must drill down to WHY/source/evidence. Do not add mutating buttons or a broad UI redesign.")))
+
+  ("TAURICODE-GUARD-O4-EXPLAIN-UNKNOWN" . (
+    (priority . 9.4)
+    (capabilities . (tauricode rust typescript guard wsm testing))
+    (origin . ecosystem)
+    (depends-on . ("TAURICODE-OBSERVER-O3-OPERATIONAL-MAP"))
+    (description . "Render structured Guard explanations and UNKNOWN routing as data: LOCAL LOOKUP then ASK-AGENT, ASK-OWNER, or RESEARCH-WEB. Show rule/source/reason and resolution evidence; Tauricode must not become authority or silently convert UNKNOWN into rejection.")))
+
+  ("TAURICODE-OBSERVER-O5-RECOVERABLE-EVENTS" . (
+    (priority . 9.0)
+    (capabilities . (tauricode rust typescript events testing))
+    (origin . ecosystem)
+    (depends-on . ("TAURICODE-GUARD-O4-EXPLAIN-UNKNOWN"))
+    (description . "Add bounded snapshot refresh/event delivery with explicit sequence, source, and observed time. Prove that a dropped event does not create hidden state: a complete read-only rescan reconstructs the displayed truth.")))
+
+  ("TAURICODE-CONTROL-O6-FIRST-BOUNDED-ACTION" . (
+    (priority . 8.8)
+    (capabilities . (tauricode rust typescript guard authorization testing))
+    (origin . ecosystem)
+    (depends-on . ("TAURICODE-OBSERVER-O5-RECOVERABLE-EVENTS"))
+    (description . "After O1-O5 are proven, implement exactly one narrow reversible or explicitly authorized action selected from a real workflow. Require preview, authority check, execution receipt, and post-action observer rescan. Do not introduce a generic control API.")))
+
 ("TAURICODE-DERIVATION-STREAMER" . (
     (priority . 7.0)
     (capabilities . (tauricode rust typescript react))
