@@ -82,4 +82,12 @@
     (description . "Teach packages/opencode language detection that .wsm is canonical WSM source and .my/.lisp are supported aliases, so documents are not sent to LSP clients as plaintext. Add focused mapping and real LSP-routing tests; do not rename protocol files. DONE: language mapping in commit 2afc6e7ee5; real WsmLS LSP server registration + tests (packages/opencode/test/lsp/language.test.ts, wsm-root.test.ts, index.test.ts) in commit e50822c2a7.")
     (done . t)
   ))
+
+  ("ECOSYSTEM-OBSERVER-DUPLICATE-OR-DRIFT-CHECK" .
+  ((priority . 6.0)
+    (capabilities . (documentation ownership rust))
+    (origin . ecosystem)
+    (context . "Found 2026-09-04 (GUARD-REF-* pass, ecosystem session): a standalone top-level repository github.com/juv4uk/ecosystem-observer exists (own AGENTS.md, live commit 2026-09-03), with the same name and the same stated purpose (read-only Git repository snapshots, Complete/Partial/Failed observation semantics) as tauricode's own crates/ecosystem-observer/. tauricode's repo.my declares agent-workstation-ui + coordination-plane-adapters as its authority, which would cover this observation surface.")
+    (description . "Determine whether the standalone ecosystem-observer repo is the canonical upstream tauricode vendors as a crate, an older/parallel copy that should be deprecated in favor of this crate, or a genuinely independent tool with its own consumers -- mirrors the same open question recorded in ecosystem-observer's own tasks.my (ECOSYSTEM-OBSERVER-CLARIFY-RELATIONSHIP-TO-TAURICODE-CRATE). Not resolved here.")
+    (done . ())))
 )))
