@@ -112,15 +112,19 @@ Repositories und Contracts bleiben maßgeblich.
 
 ## Verhältnis zu my-idea
 
-Der primäre Zweck von my-idea ist Systembeobachtung / Analyse /
-Evidence-Interpretation. Der primäre Zweck von Tauricode ist
-Agent-Ausführung / Umgebungs-Lebenszyklus / Task-Steuerung.
+Gemäß der vom Eigentümer ratifizierten my-idea ADR-003 (2026-08-30) ist
+my-idea eine kleine, praktische IDE für WSM- und Tauri-Projekte — sein
+Zyklus ist Open project → Edit → Build or Run → Stop → Read output.
+Systembeobachtung, Swarm-Dashboard, Ecosystem-Knowledge-Graph und
+Agent-Control-Plane-Funktionen gehören zu `tauricode`, nicht zu my-idea;
+verbliebener Observatory-Code in my-idea ist historisch und bleibt nur
+hinter der Produktoberfläche.
 
 Beide können dieselben zugrunde liegenden Daten lesen (Tasks,
 Evidence, Contracts) — diese Überschneidung ist erwartet und
 zulässig. Was sich nicht überschneiden darf, ist der primäre Zweck:
 my-idea wird nicht zu einer zweiten Control Plane, und Tauricode wird
-nicht zu einer zweiten Interpretationsschicht.
+nicht zu einer zweiten IDE/Interpretationsschicht.
 
 ## Verhältnis zu OpenCode
 

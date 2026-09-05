@@ -108,14 +108,17 @@ Tauricode не є authority для:
 
 ## Відношення до my-idea
 
-Головна мета my-idea — system observation / analysis / evidence
-interpretation. Головна мета Tauricode — agent execution / environment
-lifecycle / task control.
+За owner-ratified my-idea ADR-003 (2026-08-30), my-idea — це малий,
+практичний IDE для WSM і Tauri проєктів: його цикл — Open project →
+Edit → Build or Run → Stop → Read output. System observation, swarm
+dashboard, ecosystem knowledge graph та функції agent control-plane
+належать `tauricode`, а не my-idea; будь-який залишковий Observatory-код
+у my-idea є історичним і лишається лише поза продуктовою поверхнею.
 
 Обидва можуть читати ті самі первинні дані (tasks, evidence, contracts)
 — цей перетин очікуваний і прийнятний. Що не повинно перетинатись —
 primary purpose: my-idea не стає другим control plane, а Tauricode не
-стає другим шаром інтерпретації.
+стає другим шаром інтерпретації/IDE.
 
 ## Відношення до OpenCode
 

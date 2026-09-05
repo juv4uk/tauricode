@@ -108,14 +108,17 @@ and contracts remain authoritative.
 
 ## Relationship to my-idea
 
-my-idea's primary purpose is system observation / analysis / evidence
-interpretation. Tauricode's primary purpose is agent execution /
-environment lifecycle / task control.
+Per owner-ratified my-idea ADR-003 (2026-08-30), my-idea is a small,
+practical IDE for WSM and Tauri projects — its loop is Open project →
+Edit → Build or Run → Stop → Read output. System observation, swarm
+dashboard, ecosystem knowledge graph and agent control-plane features
+belong to `tauricode`, not my-idea; any residual Observatory code in
+my-idea is historical and behind the product surface only.
 
 Both may read the same underlying data (tasks, evidence, contracts) —
 that overlap is expected and acceptable. What must not overlap is
 primary purpose: my-idea does not become a second control plane, and
-Tauricode does not become a second interpretation layer.
+Tauricode does not become a second IDE/interpretation layer.
 
 ## Relationship to OpenCode
 
