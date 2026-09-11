@@ -90,4 +90,16 @@
     (context . "Found 2026-09-04 (GUARD-REF-* pass, ecosystem session): a standalone top-level repository github.com/juv4uk/ecosystem-observer exists (own AGENTS.md, live commit 2026-09-03), with the same name and the same stated purpose (read-only Git repository snapshots, Complete/Partial/Failed observation semantics) as tauricode's own crates/ecosystem-observer/. tauricode's repo.my declares agent-workstation-ui + coordination-plane-adapters as its authority, which would cover this observation surface.")
     (description . "Determine whether the standalone ecosystem-observer repo is the canonical upstream tauricode vendors as a crate, an older/parallel copy that should be deprecated in favor of this crate, or a genuinely independent tool with its own consumers -- mirrors the same open question recorded in ecosystem-observer's own tasks.my (ECOSYSTEM-OBSERVER-CLARIFY-RELATIONSHIP-TO-TAURICODE-CRATE). Not resolved here.")
     (done . ())))
+
+  ("ECO-CANON-1" .
+   ((priority . 9.9)
+    (capabilities . (tauricode canon semantic-registry functions tooling testing))
+    (origin . owner-2026-09-11)
+    (description . "Full Canon migration + language-neutral function/operation table. Tauricode is control-plane, not domain semantic authority: audit hard-coded command/tool/function identities, IDs, duplicate schemas and display-coupled logic; derive language identities from my-lisp Canon/semantic-registry and other domain identities from their owning registries/contracts. Create a machine-readable table with canonical/domain identity, semantic/local ID, formal action, authority owner/source, control-plane projection, display surfaces, status and executable witness. Display/CLI labels are never identity. Missing/conflicting mappings fail closed. Acceptance: no duplicated semantic facts; generated projections; drift/mutation tests; embedded/standalone observer paths agree.")))
+
+  ("ECO-LISP-SCRIPTS-1" .
+   ((priority . 9.8)
+    (capabilities . (tauricode my-lisp scripting migration testing performance))
+    (origin . owner-2026-09-11)
+    (description . "Remove repo-owned Python scripting and rewrite active scripts/tooling in my-lisp. Audit .py files and python/python3 invocations in build/codegen, validators, observer/snapshot/report tooling, CI/tests and migration helpers. For each active script: record I/O/exit/artifact contract; write .my/.мій replacement; prove differential parity plus negative/malformed behavior; switch automation; delete Python only after green parity. No Python fallback. If my-lisp performance/capability blocks migration, submit measured workload/profile/optimization proposal to https://github.com/juv4uk/my-lisp/issues/74 instead of adding a local workaround. Acceptance: active repo-owned scripting surface no longer depends on Python; artifacts deterministic; authority boundaries preserved.")))
 )))
