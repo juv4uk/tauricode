@@ -102,4 +102,11 @@
     (capabilities . (tauricode my-lisp scripting migration testing performance))
     (origin . owner-2026-09-11)
     (description . "Remove repo-owned Python scripting and rewrite active scripts/tooling in my-lisp. Audit .py files and python/python3 invocations in build/codegen, validators, observer/snapshot/report tooling, CI/tests and migration helpers. For each active script: record I/O/exit/artifact contract; write .my/.мій replacement; prove differential parity plus negative/malformed behavior; switch automation; delete Python only after green parity. No Python fallback. If my-lisp performance/capability blocks migration, submit measured workload/profile/optimization proposal to https://github.com/juv4uk/my-lisp/issues/74 instead of adding a local workaround. Acceptance: active repo-owned scripting surface no longer depends on Python; artifacts deterministic; authority boundaries preserved.")))
+
+  ("ECO-UKRAINIAN-SOURCE-1" .
+   ((priority . 9.7)
+    (capabilities . (tauricode my-lisp ukrainian surface canon filenames unicode testing))
+    (origin . owner-2026-09-11)
+    (depends-on . ("ECO-CANON-1"))
+    (description . "After Canon/function-table migration, make Ukrainian the primary human-facing Lisp/WSM source surface. New and migrated human-authored programs, scripts, modules and fixtures use full Ukrainian words without programmer abbreviations; examples of the intended style include плюс, мінус, як-є, визначити, функція, якщо, порожнє?, однакові?, while exact spellings must be ratified by Canon/function table. Canon/semantic ID remains identity; Ukrainian spelling is only surface. New project-owned Lisp/WSM source files use Ukrainian Cyrillic filenames and .всм as the primary extension; .my/.wsm remain staged legacy/compatibility/interchange only. Do not rename mandatory external/toolchain files or Rust/TypeScript implementation files. Enforce UTF-8 NFC, Unicode/casefold collision checks, Linux/WSL/Windows round-trip and an explicit allowlist for unavoidable international acronyms. CI must reject English-surface regression, unratified abbreviations and new human-authored source in legacy extensions.")))
 )))
