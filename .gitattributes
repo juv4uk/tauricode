@@ -6,6 +6,9 @@
 *.wsm linguist-language=Lisp
 *.my linguist-language=Lisp
 *.lisp linguist-language=Lisp
+*.всм linguist-language=Lisp
+*.мій linguist-language=Lisp
+*.лісп linguist-language=Lisp
 
 # Windows-only formats where CRLF is semantically required
 *.bat text eol=crlf

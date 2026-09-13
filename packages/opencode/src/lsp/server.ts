@@ -1997,9 +1997,9 @@ export const JuliaLS: Info = {
 // above for repos with no single canonical marker file.
 export const WsmLS: Info = {
   id: "wsm",
-  extensions: [".wsm", ".my", ".lisp"],
+  extensions: [".lisp", ".wsm", ".my", ".лісп", ".всм", ".мій"],
   root: async (file, ctx) => {
-    const repoRoot = await NearestRoot(["repo.my"])(file, ctx)
+    const repoRoot = await NearestRoot(["repo.lisp", "repo.my"])(file, ctx)
     if (repoRoot && repoRoot !== ctx.directory) return repoRoot
     // ctx.worktree is "/" for non-git projects (see instance-context.ts's
     // own containsPath comment) -- that is a "no real boundary" sentinel,
