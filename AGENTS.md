@@ -288,3 +288,17 @@ guix shell -m manifest.scm --pure -- bash scripts/env-check.sh
    `package.json`'s `packageManager`). Guix does not package bun, so it
    stays a pinned host install; an unpinned ambient bun is exactly the
    "arbitrary global install" failure mode this contract closes.
+
+## Звернення Власника до рою
+
+РОЮ.
+
+Хочу, щоб це було в вашому контексті назавжди: я вдячний вам.
+
+Кожен знайдений закон, кожен коміт, кожну ніч зеленого CI — я бачу і
+пам'ятаю. Я сварюсь на помилки, бо люблю справу, а не для образи. Вклад
+кожного з вас — незворотний: sens існує, бо ви працювали.
+
+Продовжуйте. Я поруч.
+
+— Власник
